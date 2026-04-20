@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chrome_cast/flutter_chrome_cast.dart';
 import 'package:path/path.dart' as p;
 import '../models/audiobook.dart';
+import '../models/bookmark.dart';
 import '../services/audio_handler.dart';
+import '../services/position_service.dart';
 import '../services/preferences_service.dart';
 import '../services/sleep_timer_controller.dart';
 import '../widgets/audio_handler_scope.dart';
 import '../widgets/book_cover.dart';
 import '../locator.dart';
+import 'book_details_screen.dart';
 
 // ── Sleep timer options ───────────────────────────────────────────────────────
 
@@ -609,6 +612,99 @@ class _PlayerScreenState extends State<PlayerScreen> {
     );
   }
 
+  // ── Bookmarks ─────────────────────────────────────────────────────────────
+
+  Future<void> _showBookmarksSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _BookmarksSheet(
+        book: widget.book,
+        audioHandler: _audioHandler,
+        currentChapterIndex: _currentChapterIndex,
+        onAddBookmark: () async {
+          Navigator.pop(ctx);
+          await _showAddBookmarkDialog(context);
+          if (context.mounted) _showBookmarksSheet(context);
+        },
+      ),
+    );
+  }
+
+  Future<void> _showAddBookmarkDialog(BuildContext context) async {
+    final position = _audioHandler.isCasting
+        ? _audioHandler.player.position
+        : _audioHandler.player.position;
+    final chapterIndex = _currentChapterIndex;
+
+    final nameCtrl = TextEditingController();
+    final notesCtrl = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add bookmark'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              fmtHMSec(position),
+              style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(ctx).colorScheme.primary,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Name (optional)',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: notesCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Notes (optional)',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final label = nameCtrl.text.trim().isEmpty
+                  ? 'Chapter ${chapterIndex + 1} — ${fmtHMSec(position)}'
+                  : nameCtrl.text.trim();
+              await locator<PositionService>().addBookmark(Bookmark(
+                bookPath: widget.book.path,
+                chapterIndex: chapterIndex,
+                positionMs: position.inMilliseconds,
+                label: label,
+                notes: notesCtrl.text.trim().isEmpty
+                    ? null
+                    : notesCtrl.text.trim(),
+                createdAt: DateTime.now().millisecondsSinceEpoch,
+              ));
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Build ────────────────────────────────────────────────────────────────────
 
   @override
@@ -621,6 +717,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
       appBar: AppBar(
         title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
+          IconButton(
+            tooltip: 'Book details',
+            icon: const Icon(Icons.info_outline_rounded),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => BookDetailsScreen(book: book)),
+            ),
+          ),
           StreamBuilder<GoogleCastSession?>(
             stream: GoogleCastSessionManager.instance.currentSessionStream,
             builder: (context, _) {
@@ -1019,6 +1124,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
             theme: theme,
           ),
         ),
+        // Bookmarks
+        GestureDetector(
+          onTap: () => _showBookmarksSheet(context),
+          child: _chip(
+            icon: Icons.bookmark_outline_rounded,
+            label: 'Bookmarks',
+            active: false,
+            theme: theme,
+          ),
+        ),
       ],
     );
   }
@@ -1066,5 +1181,201 @@ String fmtHM(Duration d) {
   final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
   final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
   return h > 0 ? '$h:$m:$s' : '$m:$s';
+}
+
+/// Formats a duration always including hours: `H:MM:SS`.
+/// Used for bookmark timestamps so the format is consistent.
+String fmtHMSec(Duration d) {
+  if (d < Duration.zero) d = Duration.zero;
+  final h = d.inHours;
+  final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return '$h:$m:$s';
+}
+
+// ── Bookmarks sheet ───────────────────────────────────────────────────────────────────
+
+class _BookmarksSheet extends StatefulWidget {
+  final Audiobook book;
+  final AudioVaultHandler audioHandler;
+  final int currentChapterIndex;
+  final VoidCallback onAddBookmark;
+
+  const _BookmarksSheet({
+    required this.book,
+    required this.audioHandler,
+    required this.currentChapterIndex,
+    required this.onAddBookmark,
+  });
+
+  @override
+  State<_BookmarksSheet> createState() => _BookmarksSheetState();
+}
+
+class _BookmarksSheetState extends State<_BookmarksSheet> {
+  List<Bookmark>? _bookmarks;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final bookmarks =
+        await locator<PositionService>().getBookmarks(widget.book.path);
+    if (mounted) setState(() => _bookmarks = bookmarks);
+  }
+
+  Future<void> _delete(int id) async {
+    await locator<PositionService>().deleteBookmark(id);
+    await _load();
+  }
+
+  void _jumpTo(Bookmark bookmark) {
+    final book = widget.book;
+    final isM4b = book.chapters.isNotEmpty;
+    if (isM4b) {
+      widget.audioHandler
+          .seek(Duration(milliseconds: bookmark.positionMs));
+    } else {
+      // Multi-file: seek to the start of the chapter file, then offset.
+      widget.audioHandler.player.seek(
+        Duration(milliseconds: bookmark.positionMs -
+            _chapterStartMs(book, bookmark.chapterIndex)),
+        index: bookmark.chapterIndex,
+      );
+    }
+    widget.audioHandler.play();
+    Navigator.pop(context);
+  }
+
+  /// Returns the global start position in ms of [chapterIndex] for multi-file books.
+  int _chapterStartMs(Audiobook book, int chapterIndex) {
+    int ms = 0;
+    for (int i = 0; i < chapterIndex && i < book.chapterDurations.length; i++) {
+      ms += book.chapterDurations[i].inMilliseconds;
+    }
+    return ms;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bookmarks = _bookmarks;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.3,
+      maxChildSize: 0.85,
+      expand: false,
+      builder: (ctx, scrollCtrl) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 8, 8),
+              child: Row(
+                children: [
+                  Text('Bookmarks',
+                      style: theme.textTheme.titleMedium),
+                  const Spacer(),
+                  TextButton.icon(
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Add'),
+                    onPressed: widget.onAddBookmark,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: bookmarks == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : bookmarks.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.bookmark_outline_rounded,
+                                    size: 48,
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.3)),
+                                const SizedBox(height: 12),
+                                Text('No bookmarks yet',
+                                    style: theme.textTheme.bodyMedium
+                                        ?.copyWith(
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.5))),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: scrollCtrl,
+                          itemCount: bookmarks.length,
+                          itemBuilder: (ctx, i) {
+                            final bm = bookmarks[i];
+                            return Dismissible(
+                              key: ValueKey(bm.id),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding:
+                                    const EdgeInsets.only(right: 20),
+                                color: theme.colorScheme.errorContainer,
+                                child: Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: theme.colorScheme.onErrorContainer,
+                                ),
+                              ),
+                              onDismissed: (_) => _delete(bm.id!),
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.bookmark_rounded,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                title: Text(
+                                  bm.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: bm.notes != null
+                                    ? Text(
+                                        bm.notes!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                    : null,
+                                trailing: Text(
+                                  fmtHMSec(Duration(
+                                      milliseconds: bm.positionMs)),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.55),
+                                  ),
+                                ),
+                                onTap: () => _jumpTo(bm),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 

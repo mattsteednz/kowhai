@@ -5,9 +5,12 @@ import 'package:path/path.dart' as p;
 
 import '../locator.dart';
 import '../models/audiobook.dart';
+import '../models/bookmark.dart';
 import '../services/drive_book_repository.dart';
 import '../services/drive_download_manager.dart';
 import '../services/drive_library_service.dart';
+import '../services/position_service.dart';
+import '../widgets/audio_handler_scope.dart';
 import '../widgets/book_cover.dart';
 import 'player_screen.dart';
 
@@ -122,6 +125,8 @@ class _BookContent extends StatelessWidget {
           const SizedBox(height: 24),
           _DescriptionSection(description: book.description!),
         ],
+        const SizedBox(height: 24),
+        _BookmarksSection(book: book),
         const SizedBox(height: 24),
         _MetadataSection(book: book),
       ],
@@ -452,6 +457,117 @@ class _MetadataRow {
   const _MetadataRow(this.label, this.value);
 }
 
+// ── Bookmarks section ─────────────────────────────────────────────────────────────────
+
+class _BookmarksSection extends StatefulWidget {
+  final Audiobook book;
+
+  const _BookmarksSection({required this.book});
+
+  @override
+  State<_BookmarksSection> createState() => _BookmarksSectionState();
+}
+
+class _BookmarksSectionState extends State<_BookmarksSection> {
+  List<Bookmark>? _bookmarks;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final bookmarks =
+        await locator<PositionService>().getBookmarks(widget.book.path);
+    if (mounted) setState(() => _bookmarks = bookmarks);
+  }
+
+  Future<void> _delete(int id) async {
+    await locator<PositionService>().deleteBookmark(id);
+    await _load();
+  }
+
+  void _jumpTo(BuildContext context, Bookmark bookmark) {
+    final book = widget.book;
+    final ah = AudioHandlerScope.of(context).audioHandler;
+    final isM4b = book.chapters.isNotEmpty;
+    if (isM4b) {
+      ah.seek(Duration(milliseconds: bookmark.positionMs));
+    } else {
+      int startMs = 0;
+      for (int i = 0;
+          i < bookmark.chapterIndex && i < book.chapterDurations.length;
+          i++) {
+        startMs += book.chapterDurations[i].inMilliseconds;
+      }
+      ah.player.seek(
+        Duration(milliseconds: bookmark.positionMs - startMs),
+        index: bookmark.chapterIndex,
+      );
+    }
+    ah.play();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (_) => PlayerScreen(book: widget.book)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bookmarks = _bookmarks;
+
+    if (bookmarks == null || bookmarks.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Bookmarks',
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...bookmarks.map((bm) => Dismissible(
+              key: ValueKey(bm.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 16),
+                color: theme.colorScheme.errorContainer,
+                child: Icon(Icons.delete_outline_rounded,
+                    color: theme.colorScheme.onErrorContainer),
+              ),
+              onDismissed: (_) => _delete(bm.id!),
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.bookmark_rounded,
+                    color: theme.colorScheme.primary),
+                title: Text(bm.label,
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: bm.notes != null
+                    ? Text(bm.notes!,
+                        maxLines: 1, overflow: TextOverflow.ellipsis)
+                    : null,
+                trailing: Text(
+                  fmtHMSec(Duration(milliseconds: bm.positionMs)),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color:
+                        theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                  ),
+                ),
+                onTap: () => _jumpTo(context, bm),
+              ),
+            )),
+      ],
+    );
+  }
+}
 class _MetadataRowWidget extends StatelessWidget {
   final _MetadataRow row;
 

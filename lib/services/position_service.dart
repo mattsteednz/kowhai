@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/audiobook.dart';
+import '../models/bookmark.dart';
 
 class PositionService {
   PositionService();
@@ -28,7 +29,7 @@ class PositionService {
     final dir = await getApplicationDocumentsDirectory();
     return openDatabase(
       '${dir.path}/audiovault_positions.db',
-      version: 3,
+      version: 4,
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE positions (
@@ -42,6 +43,7 @@ class PositionService {
           )
         ''');
         await _createDriveTables(db);
+        await _createBookmarksTable(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -50,8 +52,27 @@ class PositionService {
         if (oldVersion < 3) {
           await db.execute('ALTER TABLE positions ADD COLUMN status TEXT');
         }
+        if (oldVersion < 4) {
+          await _createBookmarksTable(db);
+        }
       },
     );
+  }
+
+  Future<void> _createBookmarksTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE bookmarks (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        book_path    TEXT NOT NULL,
+        chapter_index INTEGER NOT NULL,
+        position_ms  INTEGER NOT NULL,
+        label        TEXT NOT NULL,
+        notes        TEXT,
+        created_at   INTEGER NOT NULL
+      )
+    ''');
+    await db.execute(
+        'CREATE INDEX idx_bookmarks_book_path ON bookmarks(book_path)');
   }
 
   Future<void> _createDriveTables(Database db) async {
@@ -205,6 +226,49 @@ class PositionService {
       return BookStatus.finished;
     }
     return BookStatus.inProgress;
+  }
+
+  // ── Bookmark CRUD ──────────────────────────────────────────────────────────
+
+  Future<Bookmark> addBookmark(Bookmark bookmark) async {
+    final db = await _database;
+    final id = await db.insert('bookmarks', bookmark.toMap());
+    return Bookmark(
+      id: id,
+      bookPath: bookmark.bookPath,
+      chapterIndex: bookmark.chapterIndex,
+      positionMs: bookmark.positionMs,
+      label: bookmark.label,
+      notes: bookmark.notes,
+      createdAt: bookmark.createdAt,
+    );
+  }
+
+  Future<List<Bookmark>> getBookmarks(String bookPath) async {
+    final db = await _database;
+    final rows = await db.query(
+      'bookmarks',
+      where: 'book_path = ?',
+      whereArgs: [bookPath],
+      orderBy: 'position_ms ASC',
+    );
+    return rows.map(Bookmark.fromMap).toList();
+  }
+
+  Future<void> deleteBookmark(int id) async {
+    final db = await _database;
+    await db.delete('bookmarks', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> updateBookmark(int id,
+      {required String label, String? notes}) async {
+    final db = await _database;
+    await db.update(
+      'bookmarks',
+      {'label': label, 'notes': notes},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<String?> getLastPlayedBookPath() async {

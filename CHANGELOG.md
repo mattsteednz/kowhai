@@ -4,6 +4,10 @@ All notable changes to AudioVault are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Chapter bookmarks (PRD-34)** — Bookmark any moment while listening. Tap the Bookmarks chip in the player bottom row to view all bookmarks for the current book or add a new one. Adding a bookmark captures the current timestamp (`H:MM:SS`), with optional Name and Notes fields; if Name is left blank it defaults to `Chapter X — H:MM:SS`. Bookmarks are listed in the book details screen and tapping one jumps straight to the player at that position. Swipe-to-delete in both locations. A book-details info button has been added to the player AppBar.
+
 ### Accessibility
 
 - **PRD-30** — Added `Semantics` labels to player play/pause, chapter label, and speed chip; added `tooltip` to all player transport icon buttons and custom timer +/− buttons; added `Semantics(label:, excludeSemantics: true)` to decorative badges (now playing, finished, DRM lock) in card and list tile widgets; added `tooltip` to mini player play/pause; wrapped settings dialog rows in `ConstrainedBox(minHeight: 48)` to meet the 48dp touch target minimum; added large-text (2×) widget tests confirming no overflow.
