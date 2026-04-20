@@ -72,9 +72,10 @@ class _BearerClient extends http.BaseClient {
 }
 
 class DriveService {
-  static const _scope = drive.DriveApi.driveReadonlyScope;
+  static const _readScope = drive.DriveApi.driveReadonlyScope;
+  static const _writeScope = drive.DriveApi.driveFileScope;
 
-  final GoogleSignIn _signIn = GoogleSignIn(scopes: [_scope]);
+  final GoogleSignIn _signIn = GoogleSignIn(scopes: [_readScope]);
 
   GoogleSignInAccount? _account;
   GoogleSignInAccount? get currentAccount => _account;
@@ -244,6 +245,118 @@ class DriveService {
   }
 
   DriveFileInfo? _pickCover(List<DriveFileInfo> images) => pickCover(images);
+
+  // ── Write operations (requires driveFileScope) ─────────────────────────────────────
+
+  /// Requests the write scope interactively. Returns true if granted.
+  /// Call this only when the user explicitly enables Drive sync.
+  Future<bool> requestWriteScope() async {
+    if (_account == null) return false;
+    try {
+      return await _signIn.requestScopes([_writeScope]);
+    } catch (e) {
+      debugPrint('[Drive] requestWriteScope failed: $e');
+      return false;
+    }
+  }
+
+  /// Returns true if the write scope has already been granted.
+  Future<bool> hasWriteScope() async {
+    if (_account == null) return false;
+    try {
+      return await _signIn.requestScopes([_writeScope]);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Finds or creates a folder named [name] inside [parentId].
+  /// Returns the folder ID.
+  Future<String> findOrCreateFolder(String parentId, String name) async {
+    final api = await _driveApi();
+    if (api == null) throw Exception('Not signed in');
+
+    // Check if it already exists.
+    final resp = await api.files.list(
+      q: "'$parentId' in parents and name = '$name' and "
+          "mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+      spaces: 'drive',
+      $fields: 'files(id)',
+    );
+    final existing = resp.files?.firstOrNull;
+    if (existing?.id != null) return existing!.id!;
+
+    // Create it.
+    final created = await api.files.create(
+      drive.File()
+        ..name = name
+        ..mimeType = 'application/vnd.google-apps.folder'
+        ..parents = [parentId],
+      $fields: 'id',
+    );
+    if (created.id == null) throw Exception('Failed to create folder');
+    return created.id!;
+  }
+
+  /// Uploads [bytes] as [fileName] inside [parentFolderId], replacing any
+  /// existing file with the same name.
+  Future<void> uploadFile(
+      String parentFolderId, String fileName, List<int> bytes) async {
+    final api = await _driveApi();
+    if (api == null) throw Exception('Not signed in');
+
+    // Check for existing file to update.
+    final resp = await api.files.list(
+      q: "'$parentFolderId' in parents and name = '$fileName' and trashed = false",
+      spaces: 'drive',
+      $fields: 'files(id)',
+    );
+    final existingId = resp.files?.firstOrNull?.id;
+
+    final media = drive.Media(
+      Stream.value(bytes),
+      bytes.length,
+      contentType: 'application/json',
+    );
+
+    if (existingId != null) {
+      await api.files.update(drive.File(), existingId, uploadMedia: media);
+    } else {
+      await api.files.create(
+        drive.File()
+          ..name = fileName
+          ..parents = [parentFolderId],
+        uploadMedia: media,
+      );
+    }
+  }
+
+  /// Downloads the first file named [fileName] inside [parentFolderId].
+  /// Returns null if not found or on error.
+  Future<List<int>?> downloadFileByName(
+      String parentFolderId, String fileName) async {
+    final api = await _driveApi();
+    if (api == null) return null;
+
+    final resp = await api.files.list(
+      q: "'$parentFolderId' in parents and name = '$fileName' and trashed = false",
+      spaces: 'drive',
+      $fields: 'files(id)',
+    );
+    final fileId = resp.files?.firstOrNull?.id;
+    if (fileId == null) return null;
+
+    final media = await api.files.get(
+      fileId,
+      downloadOptions: drive.DownloadOptions.fullMedia,
+    ) as drive.Media;
+
+    final bytes = <int>[];
+    await for (final chunk in media.stream) {
+      bytes.addAll(chunk);
+    }
+    return bytes;
+  }
 }
 
 /// Chooses the most likely cover image from a list of image files.

@@ -15,6 +15,9 @@ class PreferencesService {
   static const _removeWhenFinishedKey = 'drive_remove_when_finished';
   static const _refreshOnStartupKey = 'refresh_on_startup';
   static const _librarySortKey = 'library_sort';
+  static const _driveProgressSyncKey = 'drive_progress_sync';
+  static const _driveBackupFolderIdKey = 'drive_backup_folder_id';
+  static const _driveBackupFolderNameKey = 'drive_backup_folder_name';
 
   SharedPreferences? _prefs;
 
@@ -123,5 +126,33 @@ class PreferencesService {
 
   Future<void> setRefreshOnStartup(bool value) async {
     await (await _sp).setBool(_refreshOnStartupKey, value);
+  }
+
+  Future<bool> getDriveProgressSync() async {
+    return (await _sp).getBool(_driveProgressSyncKey) ?? false;
+  }
+
+  Future<void> setDriveProgressSync(bool value) async {
+    await (await _sp).setBool(_driveProgressSyncKey, value);
+  }
+
+  Future<({String id, String name})?> getDriveBackupFolder() async {
+    final prefs = await _sp;
+    final id = prefs.getString(_driveBackupFolderIdKey);
+    final name = prefs.getString(_driveBackupFolderNameKey);
+    if (id == null || name == null) return null;
+    return (id: id, name: name);
+  }
+
+  Future<void> setDriveBackupFolder(String id, String name) async {
+    final prefs = await _sp;
+    await prefs.setString(_driveBackupFolderIdKey, id);
+    await prefs.setString(_driveBackupFolderNameKey, name);
+  }
+
+  Future<void> clearDriveBackupFolder() async {
+    final prefs = await _sp;
+    await prefs.remove(_driveBackupFolderIdKey);
+    await prefs.remove(_driveBackupFolderNameKey);
   }
 }

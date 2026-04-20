@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/drive_library_service.dart';
 import '../services/drive_service.dart';
 import '../services/enrichment_service.dart';
+import '../services/position_backup_service.dart';
 import '../widgets/audio_handler_scope.dart';
 import '../widgets/drive_folder_picker.dart';
 import '../services/preferences_service.dart';
@@ -42,6 +43,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _driveRescanning = false;
   bool _removeWhenFinished = false;
   bool _refreshOnStartup = false;
+  bool _driveProgressSync = false;
+  String? _driveBackupFolderName;
 
   @override
   void initState() {
@@ -63,6 +66,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final driveAvail = await driveService.isAvailable();
     final removeWhenFinished = await prefs.getRemoveWhenFinished();
     final refreshOnStartup = await prefs.getRefreshOnStartup();
+    final driveProgressSync = await prefs.getDriveProgressSync();
+    final driveBackupFolder = await prefs.getDriveBackupFolder();
 
     GoogleSignInAccount? driveAccount;
     if (driveAvail) {
@@ -82,6 +87,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _driveFolderName = driveRoot?.name;
       _removeWhenFinished = removeWhenFinished;
       _refreshOnStartup = refreshOnStartup;
+      _driveProgressSync = driveProgressSync;
+      _driveBackupFolderName = driveBackupFolder?.name;
     });
   }
 
@@ -211,6 +218,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _setRemoveWhenFinished(bool value) async {
     await locator<PreferencesService>().setRemoveWhenFinished(value);
     setState(() => _removeWhenFinished = value);
+  }
+
+  Future<void> _setDriveProgressSync(bool value) async {
+    if (!value) {
+      await locator<PreferencesService>().setDriveProgressSync(false);
+      setState(() => _driveProgressSync = false);
+      return;
+    }
+
+    // Turning on: request write scope first.
+    final driveService = locator<DriveService>();
+    final granted = await driveService.requestWriteScope();
+    if (!granted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Drive write access is required to sync progress.')),
+        );
+      }
+      return;
+    }
+
+    // If the configured Drive folder is shared, we need a writable folder.
+    final prefs = locator<PreferencesService>();
+    final rootFolder = await prefs.getDriveRootFolder();
+    final needFolderPick = rootFolder?.isShared ?? true;
+
+    // Check if we already have a backup folder cached.
+    final existing = await prefs.getDriveBackupFolder();
+    if (existing != null && !needFolderPick) {
+      await prefs.setDriveProgressSync(true);
+      setState(() => _driveProgressSync = true);
+      return;
+    }
+
+    // Pick a writable folder.
+    if (!mounted) return;
+    final folder = await showDriveFolderPicker(context, driveService);
+    if (folder == null) {
+      // User cancelled — leave toggle off.
+      return;
+    }
+
+    if (folder.isShared) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Please choose a folder in your own Drive, not a shared folder.')),
+        );
+      }
+      return;
+    }
+
+    // Try creating the AudioVault subfolder to verify write access.
+    try {
+      final folderId = await driveService.findOrCreateFolder(
+          folder.id, PositionBackupService.driveFolderName);
+      await prefs.setDriveBackupFolder(folderId, '${folder.name}/${PositionBackupService.driveFolderName}');
+      await prefs.setDriveProgressSync(true);
+      if (mounted) {
+        setState(() {
+          _driveProgressSync = true;
+          _driveBackupFolderName = '${folder.name}/AudioVault';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  "Couldn't access that folder. Check permissions and try again.")),
+        );
+      }
+    }
   }
 
   Future<void> _setRefreshOnStartup(bool value) async {
@@ -404,6 +487,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: _setRemoveWhenFinished,
                 ),
                 onTap: () => _setRemoveWhenFinished(!_removeWhenFinished),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              ),
+              ListTile(
+                leading: const Icon(Icons.cloud_sync_rounded),
+                title: const Text('Sync progress to Drive'),
+                subtitle: Text(
+                  _driveProgressSync && _driveBackupFolderName != null
+                      ? 'Saving to $_driveBackupFolderName'
+                      : 'Back up your listening progress so you can pick up where you left off on any device',
+                ),
+                trailing: Switch(
+                  value: _driveProgressSync,
+                  onChanged: _setDriveProgressSync,
+                ),
+                onTap: () => _setDriveProgressSync(!_driveProgressSync),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               ),

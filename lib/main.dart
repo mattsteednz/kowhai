@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,6 +10,8 @@ import 'screens/onboarding_screen.dart';
 import 'services/audio_handler.dart';
 import 'services/drive_book_repository.dart';
 import 'services/drive_service.dart';
+import 'services/position_backup_service.dart';
+import 'services/position_service.dart';
 import 'services/preferences_service.dart';
 import 'services/telemetry_service.dart';
 import 'firebase_options.dart';
@@ -87,6 +90,19 @@ void main() async {
   final storedTheme = await locator<PreferencesService>().getThemeMode();
   themeModeNotifier.value = _themeModeFromString(storedTheme);
 
+  // Auto-restore from Drive if local DB is empty and sync is enabled.
+  final prefs = locator<PreferencesService>();
+  final syncEnabled = await prefs.getDriveProgressSync();
+  if (syncEnabled) {
+    final positions = await locator<PositionService>().getAllPositions();
+    if (positions.isEmpty) {
+      final root = await prefs.getLibraryPath();
+      if (root != null) {
+        unawaited(locator<PositionBackupService>().restoreFromDrive(root));
+      }
+    }
+  }
+
   runApp(AudioVaultApp(
     audioHandler: audioHandler,
     themeModeNotifier: themeModeNotifier,
@@ -108,6 +124,22 @@ class AudioVaultApp extends StatefulWidget {
 }
 
 class _AudioVaultAppState extends State<AudioVaultApp> {
+  AppLifecycleListener? _lifecycleListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      onPause: () => unawaited(
+          locator<PositionBackupService>().onAppBackground()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener?.dispose();
+    super.dispose();
+  }
   static final _lightTheme = ThemeData(
     colorScheme: ColorScheme.fromSeed(
       seedColor: const Color(0xFF6B4C9A),

@@ -4,12 +4,19 @@ import 'package:sqflite/sqflite.dart';
 import '../models/audiobook.dart';
 import '../models/bookmark.dart';
 
+// Callback type for notifying that a position was saved.
+typedef PositionSavedCallback = void Function();
+
 class PositionService {
-  PositionService();
+  PositionService({this.onPositionSaved});
+
+  /// Called after every successful [savePosition].
+  final PositionSavedCallback? onPositionSaved;
 
   /// Injects an already-opened [Database] — for use in tests only.
   @visibleForTesting
-  PositionService.withDatabase(Database db) : _db = db;
+  PositionService.withDatabase(Database db, {this.onPositionSaved})
+      : _db = db;
 
   Database? _db;
 
@@ -123,6 +130,7 @@ class PositionService {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    onPositionSaved?.call();
   }
 
   Future<({int chapterIndex, Duration position})?> getPosition(
