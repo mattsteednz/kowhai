@@ -4,6 +4,10 @@ All notable changes to AudioVault are documented here.
 
 ## [Unreleased]
 
+### Accessibility
+
+- **PRD-30** — Added `Semantics` labels to player play/pause, chapter label, and speed chip; added `tooltip` to all player transport icon buttons and custom timer +/− buttons; added `Semantics(label:, excludeSemantics: true)` to decorative badges (now playing, finished, DRM lock) in card and list tile widgets; added `tooltip` to mini player play/pause; wrapped settings dialog rows in `ConstrainedBox(minHeight: 48)` to meet the 48dp touch target minimum; added large-text (2×) widget tests confirming no overflow.
+
 ### Internal
 
 - **PRD-15** — `EnrichmentService` now uses a reusable `http.Client` that is closed on `cancel()`, aborting any in-flight request immediately. A per-request timeout (10s search, 15s download) was already in place. A `withDatabase` constructor enables test injection without `path_provider`.

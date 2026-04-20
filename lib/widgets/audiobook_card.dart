@@ -37,13 +37,17 @@ class AudiobookCard extends StatelessWidget {
         ),
         if (book.isDrmLocked)
           Positioned.fill(
-            child: ColoredBox(
-              color: Colors.black.withValues(alpha: 0.45),
-              child: const Center(
-                child: Icon(
-                  Icons.lock_rounded,
-                  size: 36,
-                  color: Colors.white,
+            child: Semantics(
+              label: 'DRM protected',
+              excludeSemantics: true,
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: 0.45),
+                child: const Center(
+                  child: Icon(
+                    Icons.lock_rounded,
+                    size: 36,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -52,16 +56,20 @@ class AudiobookCard extends StatelessWidget {
           Positioned(
             right: 6,
             bottom: 6,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.volume_up_rounded,
-                size: 14,
-                color: theme.colorScheme.onPrimary,
+            child: Semantics(
+              label: 'Now playing',
+              excludeSemantics: true,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.volume_up_rounded,
+                  size: 14,
+                  color: theme.colorScheme.onPrimary,
+                ),
               ),
             ),
           )
@@ -69,16 +77,20 @@ class AudiobookCard extends StatelessWidget {
           Positioned(
             right: 6,
             bottom: 6,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondary,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_rounded,
-                size: 14,
-                color: theme.colorScheme.onSecondary,
+            child: Semantics(
+              label: 'Finished',
+              excludeSemantics: true,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.secondary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_rounded,
+                  size: 14,
+                  color: theme.colorScheme.onSecondary,
+                ),
               ),
             ),
           ),

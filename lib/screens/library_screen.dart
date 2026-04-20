@@ -1430,6 +1430,7 @@ class _MiniPlayer extends StatelessWidget {
                         icon: Icon(playing
                             ? Icons.pause_rounded
                             : Icons.play_arrow_rounded),
+                        tooltip: playing ? 'Pause' : 'Play',
                         onPressed: playing
                             ? ah.pause
                             : ah.play,

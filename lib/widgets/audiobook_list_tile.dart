@@ -61,16 +61,20 @@ class AudiobookListTile extends StatelessWidget {
             Positioned(
               right: 0,
               bottom: 0,
-              child: Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.volume_up_rounded,
-                  size: 12,
-                  color: theme.colorScheme.onPrimary,
+              child: Semantics(
+                label: 'Now playing',
+                excludeSemantics: true,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.volume_up_rounded,
+                    size: 12,
+                    color: theme.colorScheme.onPrimary,
+                  ),
                 ),
               ),
             ),
@@ -108,9 +112,13 @@ class AudiobookListTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (book.isDrmLocked)
-            Icon(Icons.lock_rounded,
-                size: 20,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+            Semantics(
+              label: 'DRM protected',
+              excludeSemantics: true,
+              child: Icon(Icons.lock_rounded,
+                  size: 20,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+            ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert_rounded,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),

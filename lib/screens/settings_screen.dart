@@ -491,23 +491,26 @@ class _SkipIntervalDialog extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       vertical: 14, horizontal: 8),
-                  child: Row(
-                    children: [
-                      Text(
-                        opt.label,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: selected
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface,
-                          fontWeight:
-                              selected ? FontWeight.w600 : null,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: Row(
+                      children: [
+                        Text(
+                          opt.label,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: selected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface,
+                            fontWeight:
+                                selected ? FontWeight.w600 : null,
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      if (selected)
-                        Icon(Icons.check_rounded,
-                            color: theme.colorScheme.primary),
-                    ],
+                        const Spacer(),
+                        if (selected)
+                          Icon(Icons.check_rounded,
+                              color: theme.colorScheme.primary),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -551,29 +554,32 @@ class _ColorModeDialog extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       vertical: 14, horizontal: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        opt.icon,
-                        color: selected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurface,
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        opt.label,
-                        style: theme.textTheme.bodyLarge?.copyWith(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: Row(
+                      children: [
+                        Icon(
+                          opt.icon,
                           color: selected
                               ? theme.colorScheme.primary
                               : theme.colorScheme.onSurface,
-                          fontWeight: selected ? FontWeight.w600 : null,
                         ),
-                      ),
-                      const Spacer(),
-                      if (selected)
-                        Icon(Icons.check_rounded,
-                            color: theme.colorScheme.primary),
-                    ],
+                        const SizedBox(width: 16),
+                        Text(
+                          opt.label,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: selected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface,
+                            fontWeight: selected ? FontWeight.w600 : null,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (selected)
+                          Icon(Icons.check_rounded,
+                              color: theme.colorScheme.primary),
+                      ],
+                    ),
                   ),
                 ),
               );

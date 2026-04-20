@@ -422,6 +422,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.remove_rounded),
+                  tooltip: 'Decrease',
                   onPressed: minutes > 1
                       ? () => setDialogState(() => minutes--)
                       : null,
@@ -436,6 +437,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.add_rounded),
+                  tooltip: 'Increase',
                   onPressed: minutes < 180
                       ? () => setDialogState(() => minutes++)
                       : null,
@@ -692,9 +694,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
       return null;
     }
 
-    Widget chapterLabel(int currentIndex) => GestureDetector(
-          onTap: hasChapters ? () => _showChapterList(context) : null,
-          child: Column(
+    Widget chapterLabel(int currentIndex) => Semantics(
+          button: hasChapters,
+          label: hasChapters ? 'Open chapter list' : null,
+          child: GestureDetector(
+            onTap: hasChapters ? () => _showChapterList(context) : null,
+            child: Column(
             children: [
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -727,7 +732,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 ),
             ],
           ),
-        );
+        ),
+      );
 
     return Column(children: [
       Text(
@@ -887,45 +893,53 @@ class _PlayerScreenState extends State<PlayerScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _iconBtn(Icons.skip_previous_rounded, 34,
-                errored ? null : _audioHandler.skipToPrevious),
+                errored ? null : _audioHandler.skipToPrevious,
+                tooltip: 'Previous chapter'),
             _iconBtn(_rewindIcon, 34,
-                errored ? null : _audioHandler.rewind),
+                errored ? null : _audioHandler.rewind,
+                tooltip: 'Rewind ${_skipInterval}s'),
             // Central play/pause button (becomes a retry icon on error)
-            GestureDetector(
-              onTap: errored
-                  ? _audioHandler.retry
-                  : (playing ? _audioHandler.pause : _audioHandler.play),
-              child: Container(
-                width: 68,
-                height: 68,
-                decoration: BoxDecoration(
-                  color: primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: busy
-                      ? SizedBox(
-                          width: 28, height: 28,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: theme.colorScheme.onPrimary))
-                      : Icon(
-                          errored
-                              ? Icons.refresh_rounded
-                              : (playing
-                                  ? Icons.pause_rounded
-                                  : Icons.play_arrow_rounded),
-                          size: 38,
-                          color: theme.colorScheme.onPrimary,
-                        ),
+            Semantics(
+              button: true,
+              label: errored ? 'Retry' : (playing ? 'Pause' : 'Play'),
+              child: GestureDetector(
+                onTap: errored
+                    ? _audioHandler.retry
+                    : (playing ? _audioHandler.pause : _audioHandler.play),
+                child: Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: busy
+                        ? SizedBox(
+                            width: 28, height: 28,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: theme.colorScheme.onPrimary))
+                        : Icon(
+                            errored
+                                ? Icons.refresh_rounded
+                                : (playing
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded),
+                            size: 38,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                  ),
                 ),
               ),
             ),
             _forwardIcon != null
                 ? _iconBtn(_forwardIcon!, 34,
-                    errored ? null : _audioHandler.fastForward)
+                    errored ? null : _audioHandler.fastForward,
+                    tooltip: 'Skip forward ${_skipInterval}s')
                 : IconButton(
                     iconSize: 34,
+                    tooltip: 'Skip forward ${_skipInterval}s',
                     icon: Transform.scale(
                       scaleX: -1,
                       child: const Icon(Icons.replay_rounded),
@@ -933,16 +947,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     onPressed: errored ? null : _audioHandler.fastForward,
                   ),
             _iconBtn(Icons.skip_next_rounded, 34,
-                errored ? null : _audioHandler.skipToNext),
+                errored ? null : _audioHandler.skipToNext,
+                tooltip: 'Next chapter'),
           ],
         );
       },
     );
   }
 
-  Widget _iconBtn(IconData icon, double size, VoidCallback? onTap) =>
+  Widget _iconBtn(IconData icon, double size, VoidCallback? onTap,
+          {String? tooltip}) =>
       IconButton(
         iconSize: size,
+        tooltip: tooltip,
         icon: Icon(icon),
         onPressed: onTap,
       );
@@ -954,13 +971,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         // Speed
-        GestureDetector(
-          onTap: _showSpeedDialog,
-          child: _chip(
-            icon: Icons.speed_rounded,
-            label: fmtSpeed(_speed),
-            active: (_speed - 1.0).abs() > 0.001,
-            theme: theme,
+        Tooltip(
+          message: 'Playback speed',
+          child: Semantics(
+            button: true,
+            label: 'Playback speed: ${fmtSpeed(_speed)}',
+            excludeSemantics: true,
+            child: GestureDetector(
+              onTap: _showSpeedDialog,
+              child: _chip(
+                icon: Icons.speed_rounded,
+                label: fmtSpeed(_speed),
+                active: (_speed - 1.0).abs() > 0.001,
+                theme: theme,
+              ),
+            ),
           ),
         ),
         // Sleep timer
