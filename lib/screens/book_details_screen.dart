@@ -110,6 +110,16 @@ class _BookContent extends StatelessWidget {
             ),
           ),
         ],
+        if (book.series != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            '${book.series}${book.seriesIndex != null ? ' #${book.seriesIndex}' : ''}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
         if (book.duration != null) ...[
           const SizedBox(height: 4),
           Text(
@@ -408,6 +418,9 @@ class _MetadataSection extends StatelessWidget {
     final theme = Theme.of(context);
     final rows = <_MetadataRow>[
       _MetadataRow('Source', _sourceLabel(book)),
+      if (book.series != null)
+        _MetadataRow('Series',
+            '${book.series}${book.seriesIndex != null ? ' #${book.seriesIndex}' : ''}'),
       if (book.releaseDate != null)
         _MetadataRow('Released', book.releaseDate!),
       if (book.language != null)

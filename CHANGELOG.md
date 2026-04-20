@@ -6,6 +6,7 @@ All notable changes to AudioVault are documented here.
 
 ### Added
 
+- **metadata.opf support (PRD-37)** — When scanning a book folder, AudioVault now reads a `metadata.opf` file (Calibre/OverDrive format) if present. OPF values take precedence over embedded audio tags for title, author, narrator, description, publisher, language, release date, and series (including series index). Series is displayed as e.g. “The Stormlight Archive #1” in the book details screen and metadata section. Narrator is shown in the player screen below the author. Books without an OPF file are unaffected.
 - **Chapter bookmarks (PRD-34)** — Bookmark any moment while listening. Tap the Bookmarks chip in the player bottom row to view all bookmarks for the current book or add a new one. Adding a bookmark captures the current timestamp (`H:MM:SS`), with optional Name and Notes fields; if Name is left blank it defaults to `Chapter X — H:MM:SS`. Bookmarks are listed in the book details screen and tapping one jumps straight to the player at that position. Swipe-to-delete in both locations. A book-details info button has been added to the player AppBar.
 
 ### Accessibility

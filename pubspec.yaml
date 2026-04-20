@@ -30,6 +30,7 @@ dependencies:
   googleapis: ^13.2.0
   google_api_availability: ^5.0.1
   connectivity_plus: ^6.0.0
+  xml: ^6.0.0
 
 dev_dependencies:
   flutter_test:

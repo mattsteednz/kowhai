@@ -102,8 +102,10 @@ void main() {
     test('deleteBookmark does not affect other bookmarks', () async {
       final svc = await _makeService();
       final a = await svc.addBookmark(_bm('/book/a', label: 'Keep'));
-      final b = await svc.addBookmark(_bm('/book/a', positionMs: 90000, label: 'Delete'));
-      await svc.deleteBookmark(b.id!);
+      await svc.addBookmark(_bm('/book/a', positionMs: 90000, label: 'Delete'));
+      final toDelete = (await svc.getBookmarks('/book/a'))
+          .firstWhere((b) => b.label == 'Delete');
+      await svc.deleteBookmark(toDelete.id!);
 
       final remaining = await svc.getBookmarks('/book/a');
       expect(remaining.length, 1);

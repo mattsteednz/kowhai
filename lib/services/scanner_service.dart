@@ -4,6 +4,7 @@ import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import '../models/audiobook.dart';
+import 'opf_parser.dart';
 
 /// Parsed result from a `.cue` sheet file.
 class _CueSheet {
@@ -204,11 +205,27 @@ class ScannerService {
     final coverPath = _pickBestCover(imageFiles);
     String title = name;
     String? author;
+    String? narrator;
     Duration totalDuration = Duration.zero;
     final chapterDurations = <Duration>[];
     final rawTitles = <String?>[];
     Uint8List? coverBytes;
     bool foundCoverInMetadata = false;
+
+    // Check for metadata.opf (case-insensitive) and parse it first.
+    // OPF values will override audio-tag values for the mapped fields.
+    OpfMetadata opf = const OpfMetadata();
+    final opfFile = allFiles.where((f) =>
+        p.basename(f.path).toLowerCase() == 'metadata.opf').firstOrNull;
+    if (opfFile != null) {
+      try {
+        opf = parseOpf(await opfFile.readAsString());
+        _log('    OPF: found (author=${opf.author}, narrator=${opf.narrator}, '
+            'series=${opf.series})');
+      } catch (e) {
+        _log('    OPF parse error: $e');
+      }
+    }
 
     // Read metadata from each audio file.
     // – Duration is always summed across all files.
@@ -237,7 +254,8 @@ class ScannerService {
         }
 
         // Use first non-empty artist as author; fall back to performers list.
-        if (author == null) {
+        // OPF author takes precedence — only read from tags if OPF had none.
+        if (author == null && opf.author == null) {
           final a = metadata.artist;
           if (a != null && a.isNotEmpty) {
             author = a;
@@ -264,43 +282,51 @@ class ScannerService {
     if (cueSheet?.title != null && title == name) title = cueSheet!.title!;
     if (cueSheet?.author != null && author == null) author = cueSheet!.author;
 
+    // OPF metadata wins over audio tags and .cue for all mapped fields.
+    if (opf.title != null) title = opf.title!;
+    if (opf.author != null) author = opf.author;
+    if (opf.narrator != null) narrator = opf.narrator;
+
     // Extract extended metadata (narrator, description, publisher, language,
     // release date) from the first audio file using format-specific tags.
-    String? narrator;
-    String? description;
-    String? publisher;
-    String? language;
-    String? releaseDate;
+    // OPF values take precedence — only read from audio tags for fields
+    // that OPF didn't provide.
+    String? description = opf.description;
+    String? publisher = opf.publisher;
+    String? language = opf.language;
+    String? releaseDate = opf.releaseDate;
+    final String? series = opf.series;
+    final int? seriesIndex = opf.seriesIndex;
     if (audioFiles.isNotEmpty) {
       try {
         final raw = readAllMetadata(File(audioFiles.first), getImage: false);
         if (raw is Mp3Metadata) {
           final lp = raw.leadPerformer?.trim();
-          if (lp != null && lp.isNotEmpty && lp != author) narrator = lp;
+          if (lp != null && lp.isNotEmpty && lp != author && narrator == null) narrator = lp;
           final commentText = raw.comments.firstOrNull?.text.trim();
-          if (commentText != null && commentText.isNotEmpty) {
+          if (commentText != null && commentText.isNotEmpty && description == null) {
             description = commentText;
           }
           final pub = raw.publisher?.trim();
-          if (pub != null && pub.isNotEmpty) publisher = pub;
+          if (pub != null && pub.isNotEmpty && publisher == null) publisher = pub;
           final lang = raw.languages?.trim();
-          if (lang != null && lang.isNotEmpty) language = lang;
-          if (raw.year != null && raw.year! > 0) {
+          if (lang != null && lang.isNotEmpty && language == null) language = lang;
+          if (raw.year != null && raw.year! > 0 && releaseDate == null) {
             releaseDate = raw.year.toString();
           }
         } else if (raw is VorbisMetadata) {
           final perf = raw.performer.firstOrNull?.trim();
-          if (perf != null && perf.isNotEmpty) narrator = perf;
+          if (perf != null && perf.isNotEmpty && narrator == null) narrator = perf;
           final desc = raw.description.firstOrNull?.trim() ??
               raw.comment.firstOrNull?.trim();
-          if (desc != null && desc.isNotEmpty) description = desc;
+          if (desc != null && desc.isNotEmpty && description == null) description = desc;
           final org = raw.organization.firstOrNull?.trim();
-          if (org != null && org.isNotEmpty) publisher = org;
+          if (org != null && org.isNotEmpty && publisher == null) publisher = org;
           final yr = raw.date.firstOrNull?.year;
-          if (yr != null && yr > 0) releaseDate = yr.toString();
+          if (yr != null && yr > 0 && releaseDate == null) releaseDate = yr.toString();
         } else if (raw is Mp4Metadata) {
           final yr = raw.year?.year;
-          if (yr != null && yr > 0) releaseDate = yr.toString();
+          if (yr != null && yr > 0 && releaseDate == null) releaseDate = yr.toString();
         }
       } catch (e) {
         _log('    Extended metadata error: $e');
@@ -359,6 +385,8 @@ class ScannerService {
       publisher: publisher,
       language: language,
       releaseDate: releaseDate,
+      series: series,
+      seriesIndex: seriesIndex,
     );
   }
 

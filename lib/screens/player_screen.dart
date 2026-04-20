@@ -857,6 +857,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
         ),
       ],
+      if (book.narrator != null) ...[
+        const SizedBox(height: 2),
+        Text(
+          'Read by ${book.narrator}',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+      ],
       if (hasChapters) ...[
         const SizedBox(height: 4),
         // _currentChapterIndex is kept up-to-date by stream subscriptions set up

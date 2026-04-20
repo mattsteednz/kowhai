@@ -80,6 +80,12 @@ class Audiobook {
   /// Release year as a string, e.g. "2021". Null if not available in metadata.
   final String? releaseDate;
 
+  /// Series name, e.g. "The Stormlight Archive". Populated from OPF metadata.
+  final String? series;
+
+  /// Position within the series, e.g. 2 for book 2. Populated from OPF metadata.
+  final int? seriesIndex;
+
   const Audiobook({
     required this.title,
     this.author,
@@ -99,6 +105,8 @@ class Audiobook {
     this.publisher,
     this.language,
     this.releaseDate,
+    this.series,
+    this.seriesIndex,
   });
 
   /// Returns the index of the M4B embedded chapter that contains [position].
@@ -131,6 +139,8 @@ class Audiobook {
     String? publisher,
     String? language,
     String? releaseDate,
+    String? series,
+    int? seriesIndex,
   }) {
     return Audiobook(
       title: title ?? this.title,
@@ -151,6 +161,8 @@ class Audiobook {
       publisher: publisher ?? this.publisher,
       language: language ?? this.language,
       releaseDate: releaseDate ?? this.releaseDate,
+      series: series ?? this.series,
+      seriesIndex: seriesIndex ?? this.seriesIndex,
     );
   }
 }
