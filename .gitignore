@@ -23,6 +23,8 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
+.amazonq/
+
 CLAUDE.md
 .claude/
 !.claude/commands/

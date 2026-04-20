@@ -16,9 +16,11 @@ Widget _wrap(Widget child) => MaterialApp(
     );
 
 void main() {
-  testWidgets('placeholder shows menu_book icon by default', (tester) async {
+  testWidgets('placeholder shows coloured tile with no icon by default',
+      (tester) async {
     await tester.pumpWidget(_wrap(BookCover(book: _book())));
-    expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
+    expect(find.byType(ColoredBox), findsAtLeastNWidgets(1));
+    expect(find.byIcon(Icons.menu_book_rounded), findsNothing);
     expect(find.byIcon(Icons.image_not_supported_outlined), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
@@ -27,7 +29,8 @@ void main() {
     await tester.pumpWidget(
       _wrap(BookCover(book: _book(), isEnriching: true)),
     );
-    expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
+    expect(find.byType(ColoredBox), findsAtLeastNWidgets(1));
+    expect(find.byIcon(Icons.menu_book_rounded), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
@@ -51,9 +54,10 @@ void main() {
         enrichmentFailed: true,
       )),
     );
-    // While enriching, should show the default placeholder icon + spinner —
+    // While enriching, should show the coloured tile + spinner —
     // not the "failed" icon — because the current attempt may still succeed.
-    expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
+    expect(find.byType(ColoredBox), findsAtLeastNWidgets(1));
+    expect(find.byIcon(Icons.menu_book_rounded), findsNothing);
     expect(find.byIcon(Icons.image_not_supported_outlined), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });

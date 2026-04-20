@@ -8,6 +8,7 @@
 - Keep commits focused; write descriptive commit messages in the format `type: short description`
   - Use the same types as branch prefixes: `feat`, `fix`, `security`, `chore`
   - Example: `feat: add sleep timer`, `fix: chapter index off-by-one`
+- Before committing any changes, always check if the user wants to test on device or make any further changes
 - Merge via fast-forward where possible; no merge commits on `main`
 - Before merging to `main`, run `flutter analyze` and `flutter test` and confirm both pass — warnings and infos are acceptable, errors are not
 - Any new code on a feature branch that can be unit tested must have a corresponding test before merging — if it's testable, it's tested
