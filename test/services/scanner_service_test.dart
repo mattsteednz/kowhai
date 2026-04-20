@@ -184,6 +184,29 @@ FILE "audiobook.mp3" MP3
       expect(books.first.chapters.length, 1);
     });
 
+    // ── Recursion depth ──────────────────────────────────────────────────────
+
+    test('books at depth 3 (root/author/series/book) are found', () async {
+      // root / Author / Series / Book
+      final bookDir = Directory('${tempDir.path}/Author/Series/Book');
+      await bookDir.create(recursive: true);
+      await File('${bookDir.path}/chapter.mp3').writeAsBytes([]);
+
+      final books = await scannerService.scanFolder(tempDir.path);
+      expect(books.length, 1);
+      expect(books.first.title, 'Book');
+    });
+
+    test('books deeper than maxScanDepth (depth 4) are not found', () async {
+      // root / A / B / C / Book — one level too deep
+      final bookDir = Directory('${tempDir.path}/A/B/C/Book');
+      await bookDir.create(recursive: true);
+      await File('${bookDir.path}/chapter.mp3').writeAsBytes([]);
+
+      final books = await scannerService.scanFolder(tempDir.path);
+      expect(books, isEmpty);
+    });
+
     // ── Natural sort ─────────────────────────────────────────────────────────
 
     test('naturalSort orders files correctly (e.g. 2.mp3 before 10.mp3)', () async {

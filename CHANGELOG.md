@@ -6,6 +6,7 @@ All notable changes to AudioVault are documented here.
 
 ### Internal
 
+- **PRD-14** — Added depth boundary tests for `ScannerService.maxScanDepth`; confirms books at depth 3 are found and depth 4 are not.
 - **PRD-13** — Extracted `_deriveStatus` helper in `PositionService`; `getBookStatus` and `getAllStatuses` now share a single source of truth for the unstarted/in-progress/finished thresholds.
 
 ### Security
