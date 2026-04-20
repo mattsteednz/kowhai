@@ -4,6 +4,10 @@ All notable changes to AudioVault are documented here.
 
 ## [Unreleased]
 
+### Internal
+
+- **PRD-13** — Extracted `_deriveStatus` helper in `PositionService`; `getBookStatus` and `getAllStatuses` now share a single source of truth for the unstarted/in-progress/finished thresholds.
+
 ### Security
 
 - **Cast server session token** — The local HTTP server now generates a random 16-byte hex token on each Cast session start. All served URLs (`/audio/<token>/<index>`, `/cover/<token>`) embed the token; requests without a valid token return 404, preventing other LAN devices from enumerating or downloading audio files while casting is active.
