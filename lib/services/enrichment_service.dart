@@ -8,10 +8,17 @@ import 'package:sqflite/sqflite.dart';
 import '../models/audiobook.dart';
 
 class EnrichmentService {
-  EnrichmentService();
+  EnrichmentService({http.Client? client}) : _client = client ?? http.Client();
+
+  /// Injects an already-opened [Database] and optional [http.Client] — for use in tests only.
+  @visibleForTesting
+  EnrichmentService.withDatabase(Database db, {http.Client? client})
+      : _client = client ?? http.Client(),
+        _db = db;
 
   static void _log(String msg) => debugPrint('[AudioVault:Enrichment] $msg');
 
+  http.Client _client;
   Database? _db;
   bool _processing = false;
   bool _cancelled = false;
@@ -113,6 +120,7 @@ class EnrichmentService {
     if (_processing) return;
     _processing = true;
     _cancelled = false;
+    _client = http.Client(); // fresh client for each queue run
     try {
       for (final book in books) {
         if (_cancelled) break;
@@ -138,8 +146,11 @@ class EnrichmentService {
     }
   }
 
-  /// Stop any in-progress enrichment queue.
-  void cancel() => _cancelled = true;
+  /// Stop any in-progress enrichment queue, aborting any in-flight HTTP request.
+  void cancel() {
+    _cancelled = true;
+    _client.close();
+  }
 
   /// Release resources. Only needed if the singleton is torn down (e.g. tests).
   void dispose() {
@@ -165,6 +176,8 @@ class EnrichmentService {
         _markFailed(book.path);
         _log('No cover found for "${book.title}"');
       }
+    } on http.ClientException {
+      // Client was closed by cancel() — exit silently.
     } catch (e) {
       _markFailed(book.path);
       _log('Error enriching "${book.title}": $e');
@@ -175,7 +188,7 @@ class EnrichmentService {
 
   Future<String?> _fetchCoverForTitle(String title) async {
     final encodedTitle = Uri.encodeComponent(title);
-    final searchResp = await http
+    final searchResp = await _client
         .get(Uri.parse(
             'https://openlibrary.org/search.json?title=$encodedTitle&limit=1'))
         .timeout(const Duration(seconds: 10));
@@ -193,7 +206,7 @@ class EnrichmentService {
   }
 
   Future<String?> _downloadCover(String coverId) async {
-    final coverResp = await http
+    final coverResp = await _client
         .get(Uri.parse(
             'https://covers.openlibrary.org/b/id/$coverId-L.jpg'))
         .timeout(const Duration(seconds: 15));
