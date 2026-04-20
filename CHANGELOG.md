@@ -2,6 +2,14 @@
 
 All notable changes to AudioVault are documented here.
 
+## [Unreleased]
+
+### Security
+
+- **Cast server session token** — The local HTTP server now generates a random 16-byte hex token on each Cast session start. All served URLs (`/audio/<token>/<index>`, `/cover/<token>`) embed the token; requests without a valid token return 404, preventing other LAN devices from enumerating or downloading audio files while casting is active.
+
+---
+
 ## [1.4.0] — 2026-04-19
 
 ### Changed

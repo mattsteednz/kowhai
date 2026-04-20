@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
@@ -10,8 +11,15 @@ class CastServer {
   /// Files currently being served, indexed by list position.
   List<String> _files = [];
 
-  /// Optional cover image path served at `/cover`.
+  /// Optional cover image path served at `/cover/<token>`.
   String? _coverPath;
+
+  /// Per-session random token embedded in all served URLs.
+  /// Requests without this token are rejected with 404.
+  String _sessionToken = '';
+
+  /// The current session token (empty string when server is not running).
+  String get sessionToken => _sessionToken;
 
   /// Whether the server is running.
   bool get isRunning => _server != null;
@@ -24,11 +32,12 @@ class CastServer {
   Future<String> start(List<String> audioFiles, {String? coverPath}) async {
     _files = audioFiles;
     _coverPath = coverPath;
+    _sessionToken = _randomToken();
 
     final ip = await _localIp();
     _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
     final port = _server!.port;
-    debugPrint('[CastServer] Serving ${_files.length} file(s) on $ip:$port');
+    debugPrint('[CastServer] Serving ${_files.length} file(s) on $ip:$port (token: $_sessionToken)');
 
     _server!.listen(_handleRequest);
     return 'http://$ip:$port';
@@ -39,6 +48,7 @@ class CastServer {
     _server = null;
     _files = [];
     _coverPath = null;
+    _sessionToken = '';
   }
 
   // ── Request handling ──────────────────────────────────────────────────────
@@ -47,15 +57,23 @@ class CastServer {
     try {
       final segments = request.uri.pathSegments;
 
-      if (segments.length == 2 && segments[0] == 'audio') {
-        final index = int.tryParse(segments[1]);
+      // All valid paths begin with the session token.
+      if (segments.isEmpty || segments[0] != _sessionToken) {
+        request.response
+          ..statusCode = HttpStatus.notFound
+          ..close();
+        return;
+      }
+
+      if (segments.length == 3 && segments[1] == 'audio') {
+        final index = int.tryParse(segments[2]);
         if (index != null && index >= 0 && index < _files.length) {
           await _serveFile(request, _files[index]);
           return;
         }
       }
 
-      if (segments.length == 1 && segments[0] == 'cover' && _coverPath != null) {
+      if (segments.length == 2 && segments[1] == 'cover' && _coverPath != null) {
         await _serveFile(request, _coverPath!);
         return;
       }
@@ -171,6 +189,12 @@ class CastServer {
     if (start >= length) return null;
     final clampedEnd = end >= length ? length - 1 : end;
     return (start, clampedEnd);
+  }
+
+  static String _randomToken() {
+    final rng = Random.secure();
+    final bytes = List<int>.generate(16, (_) => rng.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 
   static Future<String> _localIp() async {

@@ -85,6 +85,7 @@ void main() {
     late File coverFile;
     late CastServer server;
     late Uri base;
+    late String token;
     // Cast audio to 10 KB of predictable bytes for range math.
     final audioBytes = List<int>.generate(10240, (i) => i % 256);
     final coverBytes = List<int>.generate(512, (i) => (i * 7) % 256);
@@ -101,6 +102,7 @@ void main() {
         [audioFile.path],
         coverPath: coverFile.path,
       );
+      token = server.sessionToken;
       // The reported IP can be a LAN address; for tests, rewrite to localhost.
       final parsed = Uri.parse(baseUrl);
       base = Uri.parse('http://127.0.0.1:${parsed.port}');
@@ -111,8 +113,8 @@ void main() {
       await tempDir.delete(recursive: true);
     });
 
-    test('GET /audio/0 returns full file with 200', () async {
-      final resp = await http.get(base.resolve('/audio/0'));
+    test('GET /<token>/audio/0 returns full file with 200', () async {
+      final resp = await http.get(base.resolve('/$token/audio/0'));
       expect(resp.statusCode, 200);
       expect(resp.headers['content-type'], 'audio/mpeg');
       expect(resp.headers['accept-ranges'], 'bytes');
@@ -120,15 +122,15 @@ void main() {
       expect(resp.bodyBytes, audioBytes);
     });
 
-    test('GET /cover returns the cover file', () async {
-      final resp = await http.get(base.resolve('/cover'));
+    test('GET /<token>/cover returns the cover file', () async {
+      final resp = await http.get(base.resolve('/$token/cover'));
       expect(resp.statusCode, 200);
       expect(resp.headers['content-type'], 'image/jpeg');
       expect(resp.bodyBytes, coverBytes);
     });
 
-    test('GET /audio/99 for missing index returns 404', () async {
-      final resp = await http.get(base.resolve('/audio/99'));
+    test('GET /<token>/audio/99 for missing index returns 404', () async {
+      final resp = await http.get(base.resolve('/$token/audio/99'));
       expect(resp.statusCode, 404);
     });
 
@@ -137,9 +139,19 @@ void main() {
       expect(resp.statusCode, 404);
     });
 
+    test('request without token returns 404', () async {
+      final resp = await http.get(base.resolve('/audio/0'));
+      expect(resp.statusCode, 404);
+    });
+
+    test('request with wrong token returns 404', () async {
+      final resp = await http.get(base.resolve('/wrongtoken/audio/0'));
+      expect(resp.statusCode, 404);
+    });
+
     test('valid Range header returns 206 with correct slice', () async {
       final resp = await http.get(
-        base.resolve('/audio/0'),
+        base.resolve('/$token/audio/0'),
         headers: {'Range': 'bytes=100-199'},
       );
       expect(resp.statusCode, 206);
@@ -150,7 +162,7 @@ void main() {
 
     test('open-ended Range returns 206 to EOF', () async {
       final resp = await http.get(
-        base.resolve('/audio/0'),
+        base.resolve('/$token/audio/0'),
         headers: {'Range': 'bytes=10000-'},
       );
       expect(resp.statusCode, 206);
@@ -160,7 +172,7 @@ void main() {
 
     test('malformed Range returns 416 with Content-Range */length', () async {
       final resp = await http.get(
-        base.resolve('/audio/0'),
+        base.resolve('/$token/audio/0'),
         headers: {'Range': 'bytes=abc-xyz'},
       );
       expect(resp.statusCode, 416);
@@ -169,7 +181,7 @@ void main() {
 
     test('Range beyond file length returns 416', () async {
       final resp = await http.get(
-        base.resolve('/audio/0'),
+        base.resolve('/$token/audio/0'),
         headers: {'Range': 'bytes=99999-'},
       );
       expect(resp.statusCode, 416);
@@ -177,11 +189,11 @@ void main() {
 
     test('two concurrent range requests both succeed', () async {
       final f1 = http.get(
-        base.resolve('/audio/0'),
+        base.resolve('/$token/audio/0'),
         headers: {'Range': 'bytes=0-99'},
       );
       final f2 = http.get(
-        base.resolve('/audio/0'),
+        base.resolve('/$token/audio/0'),
         headers: {'Range': 'bytes=5000-5099'},
       );
       final results = await Future.wait([f1, f2]);
@@ -189,6 +201,19 @@ void main() {
       expect(results[1].statusCode, 206);
       expect(results[0].bodyBytes, audioBytes.sublist(0, 100));
       expect(results[1].bodyBytes, audioBytes.sublist(5000, 5100));
+    });
+
+    test('sessionToken is cleared after stop()', () async {
+      expect(server.sessionToken, isNotEmpty);
+      await server.stop();
+      expect(server.sessionToken, isEmpty);
+    });
+
+    test('new session generates a different token', () async {
+      final firstToken = server.sessionToken;
+      await server.stop();
+      await server.start([audioFile.path]);
+      expect(server.sessionToken, isNot(firstToken));
     });
   });
 }

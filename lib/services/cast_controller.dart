@@ -92,7 +92,7 @@ class CastController {
 
     Uri? coverUrl;
     if (book.coverImagePath != null) {
-      coverUrl = Uri.parse('$_baseUrl/cover');
+      coverUrl = Uri.parse('$_baseUrl/${_server.sessionToken}/cover');
     }
 
     final client = GoogleCastRemoteMediaClient.instance;
@@ -112,7 +112,7 @@ class CastController {
           GoogleCastMediaInformation(
             contentId: book.path,
             streamType: CastMediaStreamType.buffered,
-            contentUrl: Uri.parse('$_baseUrl/audio/0'),
+            contentUrl: Uri.parse('$_baseUrl/${_server.sessionToken}/audio/0'),
             contentType: CastServer.mimeType(book.audioFiles[0]),
             metadata: GoogleCastMusicMediaMetadata(
               title: book.title,
@@ -134,7 +134,7 @@ class CastController {
             mediaInformation: GoogleCastMediaInformation(
               contentId: '${book.path}/${e.key}',
               streamType: CastMediaStreamType.buffered,
-              contentUrl: Uri.parse('$_baseUrl/audio/${e.key}'),
+              contentUrl: Uri.parse('$_baseUrl/${_server.sessionToken}/audio/${e.key}'),
               contentType: CastServer.mimeType(e.value),
               metadata: GoogleCastMusicMediaMetadata(
                 title: book.title,
