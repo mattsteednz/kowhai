@@ -973,6 +973,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
   // ── Filter + Sort sheets ────────────────────────────────────────────────────
 
   Future<void> _openFilterSheet() async {
+    // Compute counts based on search-filtered books (ignoring status filter).
+    final searchFiltered = filterBooks(_books ?? [], _searchQuery);
+    final allCount = searchFiltered.length;
+    final statusCounts = <BookStatus, int>{};
+    for (final s in BookStatus.values) {
+      statusCounts[s] = applyStatusFilter(searchFiltered, _statuses, s).length;
+    }
+
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -1003,7 +1011,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   runSpacing: 8,
                   children: [
                     _pill(
-                      label: 'All',
+                      label: 'All ($allCount)',
                       selected: _statusFilter == null,
                       onTap: () {
                         setState(() => _statusFilter = null);
@@ -1012,7 +1020,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ),
                     for (final s in BookStatus.values)
                       _pill(
-                        label: _statusFilterLabel(s),
+                        label: '${_statusFilterLabel(s)} (${statusCounts[s] ?? 0})',
                         selected: _statusFilter == s,
                         onTap: () {
                           setState(() => _statusFilter = s);
