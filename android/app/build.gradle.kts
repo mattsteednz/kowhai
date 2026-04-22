@@ -46,11 +46,18 @@ android {
     }
 
     signingConfigs {
-        // We create the release config regardless, but only populate it if we have the data
+        // We create the release config regardless, but only populate it if we have the data.
+        // Supports two modes:
+        //   1. Local dev  — keystore at the hardcoded path + key.properties passwords
+        //   2. CI (GitHub Actions) — KEYSTORE_PATH env var + key.properties generated from secrets
         create("release") {
-            val ksPath = "C:/Users/Matt/.android/keys/audiovault-release.jks"
-            val ksFile = file(ksPath)
-            
+            val ciKeystorePath = System.getenv("KEYSTORE_PATH")
+            val ksFile = if (!ciKeystorePath.isNullOrEmpty()) {
+                file(ciKeystorePath)
+            } else {
+                file("C:/Users/Matt/.android/keys/audiovault-release.jks")
+            }
+
             if (ksFile.exists() && keyProperties.containsKey("storePassword")) {
                 storeFile = ksFile
                 storePassword = keyProperties["storePassword"] as String
