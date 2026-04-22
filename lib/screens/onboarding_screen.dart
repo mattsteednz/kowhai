@@ -1,9 +1,7 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../services/drive_library_service.dart';
 import '../services/drive_service.dart';
 import '../services/preferences_service.dart';
 import '../widgets/drive_folder_picker.dart';
@@ -105,12 +103,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       await prefs.setDriveRootFolder(folder.id, folder.name, isShared: folder.isShared);
       await prefs.setMetadataEnrichment(_metadataEnrichment);
 
-      // Kick off initial Drive scan in the background — library screen will load results
-      unawaited(locator<DriveLibraryService>().rescanDrive());
-
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LibraryScreen()),
+          MaterialPageRoute(
+              builder: (_) => const LibraryScreen(initialSyncDrive: true)),
         );
       }
     } catch (e) {

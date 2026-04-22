@@ -230,7 +230,11 @@ String formatBytes(int bytes) {
 }
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key});
+  /// When true, forces a Drive sync on first load regardless of the
+  /// refresh-on-startup preference. Used by onboarding after Drive setup
+  /// so new users see their books immediately without a manual rescan.
+  final bool initialSyncDrive;
+  const LibraryScreen({super.key, this.initialSyncDrive = false});
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -322,7 +326,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (mounted) {
       setState(() => _sortOrder = LibrarySortOrder.fromName(sortName));
     }
-    final shouldScan = await prefs.getRefreshOnStartup();
+    final shouldScan = widget.initialSyncDrive || await prefs.getRefreshOnStartup();
     // Always load previously discovered books so the library isn't empty on
     // launch. When refresh-on-startup is off, skip the Drive network sync —
     // cached Drive books still load from the DB.
