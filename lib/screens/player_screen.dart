@@ -750,7 +750,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               onTap: _showSpeedDialog,
               child: _chip(
                 icon: Icons.speed_rounded,
-                label: fmtSpeed(_speed),
+                label: (_speed - 1.0).abs() < 0.01 ? 'Speed' : fmtSpeed(_speed),
                 active: (_speed - 1.0).abs() > 0.001,
                 theme: theme,
               ),
