@@ -987,67 +987,86 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     await showModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      isScrollControlled: true,
       builder: (_) => StatefulBuilder(
         builder: (sheetCtx, setSheetState) {
           final theme = Theme.of(sheetCtx);
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              20, 0, 20, 16 + MediaQuery.of(sheetCtx).viewInsets.bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Filter', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 16),
-                Text(
-                  'PROGRESS',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    letterSpacing: 1.2,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _pill(
-                      label: 'All ($allCount)',
-                      selected: _statusFilter == null,
-                      onTap: () {
-                        setState(() => _statusFilter = null);
-                        setSheetState(() {});
-                      },
-                    ),
-                    for (final s in BookStatus.values)
-                      _pill(
-                        label: '${_statusFilterLabel(s)} (${statusCounts[s] ?? 0})',
-                        selected: _statusFilter == s,
-                        onTap: () {
-                          setState(() => _statusFilter = s);
-                          setSheetState(() {});
-                        },
+          final maxHeight = MediaQuery.of(sheetCtx).size.height * 0.75;
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxHeight),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.filter_alt_off_rounded),
-                    label: const Text('Clear all'),
-                    onPressed: _statusFilter == null
-                        ? null
-                        : () {
-                            setState(() => _statusFilter = null);
-                            setSheetState(() {});
-                          },
+                    ),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Filter', style: theme.textTheme.titleMedium),
+                        const SizedBox(height: 16),
+                        Text(
+                          'PROGRESS',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            letterSpacing: 1.2,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _pill(
+                              label: 'All ($allCount)',
+                              selected: _statusFilter == null,
+                              onTap: () {
+                                setState(() => _statusFilter = null);
+                                setSheetState(() {});
+                              },
+                            ),
+                            for (final s in BookStatus.values)
+                              _pill(
+                                label: '${_statusFilterLabel(s)} (${statusCounts[s] ?? 0})',
+                                selected: _statusFilter == s,
+                                onTap: () {
+                                  setState(() => _statusFilter = s);
+                                  setSheetState(() {});
+                                },
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        TextButton.icon(
+                          icon: const Icon(Icons.filter_alt_off_rounded),
+                          label: const Text('Clear all'),
+                          onPressed: _statusFilter == null
+                              ? null
+                              : () {
+                                  setState(() => _statusFilter = null);
+                                  setSheetState(() {});
+                                },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -1058,45 +1077,56 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _openSortSheet() async {
     await showModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      isScrollControlled: true,
       builder: (sheetCtx) {
         final theme = Theme.of(sheetCtx);
+        final maxHeight = MediaQuery.of(sheetCtx).size.height * 0.75;
         return SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: Text('Sort by', style: theme.textTheme.titleLarge),
-              ),
-              for (final order in LibrarySortOrder.values)
-                ListTile(
-                  title: Text(_sortPillLabel(order)),
-                  trailing: order == _sortOrder
-                      ? Icon(Icons.check_rounded,
-                          color: theme.colorScheme.primary)
-                      : null,
-                  onTap: () async {
-                    await _setSortOrder(order);
-                    if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                  },
-                ),
-              const Divider(height: 1),
-              ListTile(
-                title: Center(
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                 ),
-                onTap: () => Navigator.pop(sheetCtx),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: Text('Sort by', style: theme.textTheme.titleMedium),
+                ),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final order in LibrarySortOrder.values)
+                        ListTile(
+                          title: Text(_sortPillLabel(order)),
+                          trailing: order == _sortOrder
+                              ? Icon(Icons.check_rounded,
+                                  color: theme.colorScheme.primary)
+                              : null,
+                          onTap: () async {
+                            await _setSortOrder(order);
+                            if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                          },
+                        ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

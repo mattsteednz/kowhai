@@ -33,17 +33,18 @@ class BookCover extends StatelessWidget {
     this.placeholderIndex,
   });
 
-  /// Jewel-tone palette used for placeholder tiles when no cover art exists.
-  /// Used in both light and dark modes.
+  /// Muted mid-tone palette used for placeholder tiles when no cover art exists.
+  /// Works in both light and dark modes — light enough not to overpower a light
+  /// UI, dark enough to keep the icon legible.
   static const List<Color> placeholderPalette = [
-    Color(0xFF1A3A5C), // deep navy
-    Color(0xFF2A1A3A), // deep plum
-    Color(0xFF1A2A1A), // dark forest
-    Color(0xFF3A2A1A), // dark amber
-    Color(0xFF2A3A1A), // dark moss
-    Color(0xFF3A1A1A), // dark crimson
-    Color(0xFF1A3A3A), // dark teal
-    Color(0xFF2A2A3A), // dark slate
+    Color(0xFF5C7A9E), // muted steel blue
+    Color(0xFF7A5C8A), // muted mauve
+    Color(0xFF5C7A5C), // muted sage
+    Color(0xFF8A7A5C), // muted tan
+    Color(0xFF6B8A5C), // muted olive
+    Color(0xFF8A5C5C), // muted rose
+    Color(0xFF5C8A8A), // muted teal
+    Color(0xFF6B6B8A), // muted periwinkle
   ];
 
   Color _placeholderColor() {
