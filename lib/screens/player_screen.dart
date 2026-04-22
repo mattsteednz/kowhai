@@ -796,6 +796,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
             label: 'Bookmarks',
             active: false,
             theme: theme,
+            showDropdown: false,
           ),
         ),
       ],
@@ -807,6 +808,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     required String label,
     required bool active,
     required ThemeData theme,
+    bool showDropdown = true,
   }) {
     final color = active ? theme.colorScheme.primary : theme.colorScheme.onSurface;
     return Container(
@@ -821,8 +823,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
         Icon(icon, size: 16, color: color),
         const SizedBox(width: 6),
         Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: color)),
-        const SizedBox(width: 4),
-        Icon(Icons.arrow_drop_down, size: 16, color: color),
+        if (showDropdown) ...[
+          const SizedBox(width: 4),
+          Icon(Icons.arrow_drop_down, size: 16, color: color),
+        ],
       ]),
     );
   }
