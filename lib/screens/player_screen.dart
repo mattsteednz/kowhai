@@ -247,6 +247,64 @@ class _PlayerScreenState extends State<PlayerScreen> {
     }
   }
 
+  // ── Sleep timer sheet ─────────────────────────────────────────────────────
+
+  Future<void> _showSleepTimerSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text('Sleep timer',
+                    style: theme.textTheme.titleMedium),
+              ),
+              ..._timerOpts.map((opt) {
+                final isActive = (opt.endOfChapter && _sleepCtrl.stopAtChapterEnd.value) ||
+                    (!opt.endOfChapter && opt.duration == null && !_timerActive);
+                return ListTile(
+                  title: Text(opt.label),
+                  trailing: isActive
+                      ? Icon(Icons.check_rounded,
+                          color: theme.colorScheme.primary)
+                      : null,
+                  onTap: () {
+                    _setTimer(opt);
+                    Navigator.pop(ctx);
+                  },
+                );
+              }),
+              const Divider(height: 1),
+              ListTile(
+                title: const Text('Custom…'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _showCustomTimerDialog();
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   static String _fmtOverallRemaining(Duration d) {
@@ -378,8 +436,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
+          IconButton(
+            tooltip: 'Bookmarks',
+            icon: const Icon(Icons.bookmark_outline_rounded),
+            onPressed: () => _showBookmarksSheet(context),
+          ),
           IconButton(
             tooltip: 'Book details',
             icon: const Icon(Icons.info_outline_rounded),
@@ -469,43 +531,36 @@ class _PlayerScreenState extends State<PlayerScreen> {
             behavior: HitTestBehavior.opaque,
             onTap: hasChapters ? () => _showChapterList(context) : null,
             child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Chapter ${currentIndex + 1} of $totalChapters',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.primary),
-                  ),
-                  if (hasChapters) ...[
-                    const SizedBox(width: 2),
-                    Icon(Icons.expand_more_rounded,
-                        size: 16, color: theme.colorScheme.primary),
-                  ],
-                ],
-              ),
-              if (chapterTitle(currentIndex) case final title?)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface
-                          .withValues(alpha: 0.75),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-            ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      chapterTitle(currentIndex) != null
+                          ? 'Ch. ${currentIndex + 1}/$totalChapters · ${chapterTitle(currentIndex)}'
+                          : 'Chapter ${currentIndex + 1} of $totalChapters',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.primary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (hasChapters) ...[
+                      const SizedBox(width: 2),
+                      Icon(Icons.expand_more_rounded,
+                          size: 16, color: theme.colorScheme.primary),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ),
-          ),
-        ),
-      );
+        );
 
     return Column(children: [
       Text(
@@ -524,17 +579,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
         ),
       ],
-      if (book.narrator != null) ...[
-        const SizedBox(height: 2),
-        Text(
-          'Read by ${book.narrator}',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
-        ),
-      ],
       if (hasChapters) ...[
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         // _currentChapterIndex is kept up-to-date by stream subscriptions set up
         // in didChangeDependencies, and seeded synchronously after loadBook().
         // Using state directly avoids a one-frame flash to chapter 1 that occurred
@@ -781,45 +827,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
         ),
         // Sleep timer
-        PopupMenuButton<int>(
-          tooltip: 'Sleep timer',
-          onSelected: (i) {
-            if (i == _timerOpts.length) {
-              _showCustomTimerDialog();
-            } else {
-              _setTimer(_timerOpts[i]);
-            }
-          },
-          itemBuilder: (_) => [
-            ...List.generate(
-              _timerOpts.length,
-              (i) => PopupMenuItem(
-                value: i,
-                child: Text(_timerOpts[i].label),
+        Tooltip(
+          message: 'Sleep timer',
+          child: Semantics(
+            button: true,
+            label: 'Sleep timer: $_timerLabel',
+            excludeSemantics: true,
+            child: GestureDetector(
+              onTap: () => _showSleepTimerSheet(context),
+              child: _chip(
+                icon: Icons.timer_rounded,
+                label: _timerLabel,
+                active: _timerActive,
+                theme: theme,
               ),
             ),
-            const PopupMenuDivider(),
-            PopupMenuItem(
-              value: _timerOpts.length,
-              child: const Text('Custom…'),
-            ),
-          ],
-          child: _chip(
-            icon: Icons.timer_rounded,
-            label: _timerLabel,
-            active: _timerActive,
-            theme: theme,
-          ),
-        ),
-        // Bookmarks
-        GestureDetector(
-          onTap: () => _showBookmarksSheet(context),
-          child: _chip(
-            icon: Icons.bookmark_outline_rounded,
-            label: 'Bookmarks',
-            active: false,
-            theme: theme,
-            showDropdown: false,
           ),
         ),
       ],
