@@ -902,7 +902,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     ? _ViewMode.list
                     : _ViewMode.grid),
             tooltip:
-                _viewMode == _ViewMode.grid ? 'List view' : 'Grid view',
+                _viewMode == _ViewMode.grid ? 'Switch to list view' : 'Switch to grid view',
             visualDensity: VisualDensity.compact,
           ),
           const SizedBox(width: 4),
