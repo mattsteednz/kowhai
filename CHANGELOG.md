@@ -2,6 +2,23 @@
 
 All notable changes to AudioVault are documented here.
 
+## [1.6.0] — 2026-04-22
+
+### Changed
+
+- **Player screen streamlined** — App bar title removed; bookmarks moved to an app bar icon alongside book details and Cast. The player body is less cluttered and the title/author/chapter info section carries more visual weight.
+- **Speed sheet** — Replaced Cancel/Done buttons with immediate live-apply on dismiss, consistent with the sleep timer and bookmarks sheets. Title is now left-aligned.
+- **Sleep timer sheet** — Now scrollable via a constrained `ListView`, so all options (including Custom…) are reachable on small screens without the sheet expanding to full height.
+
+### Internal
+
+- Extracted `SpeedDialog`, `ChapterListSheet`, `CastPickerDialog`, `LibraryOverflowMenu`, and `MiniPlayer` widgets from their parent screens.
+- Extracted `M4bChapterParser` into a dedicated service with full test coverage.
+- Added 30 s HTTP timeout to all Drive API calls.
+- Fixed download manager fallback path to use `getApplicationDocumentsDirectory()` instead of `/tmp`.
+
+---
+
 ## [1.5.0] — 2026-06-01
 
 ### Added
