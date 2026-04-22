@@ -683,7 +683,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 : Icons.search_rounded),
             onPressed: _isSearching
                 ? _closeSearch
-                : (_books != null && _books!.isNotEmpty ? _openSearch : null),
+                : (_books != null ? _openSearch : null),
             tooltip: _isSearching ? 'Close search' : 'Search',
           ),
           LibraryOverflowMenu(
