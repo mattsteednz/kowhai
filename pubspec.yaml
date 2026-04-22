@@ -45,6 +45,8 @@ dev_dependencies:
 # compile libdartjni.so. Without NDK configured, the .so is absent from the APK
 # and the app crashes at runtime. Pin to the last pre-JNI version until we set
 # up NDK or path_provider_android drops the JNI dependency.
+# TODO: Revisit this pin periodically — check if path_provider_android ≥2.3
+#       has dropped the JNI/NDK requirement, or configure NDK in the project.
 dependency_overrides:
   path_provider_android: 2.2.23
 
