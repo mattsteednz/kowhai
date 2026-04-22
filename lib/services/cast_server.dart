@@ -5,6 +5,12 @@ import 'package:path/path.dart' as p;
 
 /// Lightweight HTTP server that serves local audio files over the LAN
 /// so a Google Cast device can stream them.
+///
+/// Uses plain HTTP (not HTTPS) because the Google Cast protocol requires
+/// the receiver to fetch media over the local network, and Cast devices
+/// do not validate TLS certificates for LAN addresses. A per-session
+/// random token is embedded in all URLs to prevent unauthorized access
+/// from other devices on the same network.
 class CastServer {
   HttpServer? _server;
 

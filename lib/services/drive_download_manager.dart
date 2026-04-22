@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 import 'drive_book_repository.dart';
 import 'drive_service.dart';
@@ -293,10 +294,8 @@ class DriveDownloadManager {
   }
 
   Future<String> _defaultDestPath(String folderId, String fileName) async {
-    // Relies on path_provider — resolved by caller passing localPath or by
-    // DriveLibraryService which knows the book directory.
-    // This is a fallback; normally localPath is set by DriveLibraryService.
-    return '/tmp/drive_books/$folderId/$fileName';
+    final dir = await getApplicationDocumentsDirectory();
+    return '${dir.path}/drive_books/$folderId/$fileName';
   }
 
   void dispose() {

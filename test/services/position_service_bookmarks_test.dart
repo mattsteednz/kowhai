@@ -134,7 +134,7 @@ void main() {
 
     test('bookmark preserves chapterIndex and positionMs', () async {
       final svc = await _makeService();
-      final saved = await svc.addBookmark(
+      await svc.addBookmark(
           _bm('/book/a', chapterIndex: 5, positionMs: 123456));
       final bookmarks = await svc.getBookmarks('/book/a');
       expect(bookmarks.first.chapterIndex, 5);

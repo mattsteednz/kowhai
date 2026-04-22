@@ -1,17 +1,19 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chrome_cast/flutter_chrome_cast.dart';
-import 'package:path/path.dart' as p;
 import '../models/audiobook.dart';
 import '../models/bookmark.dart';
 import '../services/audio_handler.dart';
 import '../services/position_service.dart';
 import '../services/preferences_service.dart';
 import '../services/sleep_timer_controller.dart';
+import '../utils/formatters.dart';
 import '../widgets/audio_handler_scope.dart';
 import '../widgets/book_cover.dart';
+import '../widgets/cast_picker_dialog.dart';
+import '../widgets/chapter_list_sheet.dart';
+import '../widgets/speed_dialog.dart';
 import '../locator.dart';
 import 'book_details_screen.dart';
 
@@ -29,8 +31,6 @@ const List<_TimerOpt> _timerOpts = [
   (label: '60 minutes',     duration: Duration(minutes: 60),  endOfChapter: false),
   (label: 'End of chapter', duration: null,                   endOfChapter: true),
 ];
-
-const _commonSpeeds = [0.75, 1.0, 1.25, 1.5, 2.0, 2.5];
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -196,121 +196,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   void _cancelTimer() => _sleepCtrl.cancel();
 
-  // ── Cast device picker ───────────────────────────────────────────────────────
-
-  static Future<bool> _vpnActive() async {
-    try {
-      final interfaces = await NetworkInterface.list();
-      return interfaces.any((i) {
-        final n = i.name.toLowerCase();
-        return n.startsWith('tun') ||
-            n.startsWith('ppp') ||
-            n.startsWith('tap') ||
-            n.startsWith('vpn');
-      });
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<void> _showCastPicker() async {
-    final discovery = GoogleCastDiscoveryManager.instance;
-    final sessionManager = GoogleCastSessionManager.instance;
-
-    final vpn = await _vpnActive();
-    await discovery.startDiscovery();
-    if (!mounted) return;
-
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Cast to device'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (vpn)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.warning_amber_rounded,
-                          size: 20,
-                          color: Theme.of(ctx).colorScheme.error),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'A VPN connection is active. This may prevent '
-                          'casting from working correctly.',
-                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(ctx).colorScheme.error,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              Flexible(
-                child: StreamBuilder<List<GoogleCastDevice>>(
-                  stream: discovery.devicesStream,
-                  initialData: discovery.devices,
-                  builder: (ctx, snap) {
-                    final devices = snap.data ?? [];
-                    if (devices.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            SizedBox(width: 12),
-                            Text('Scanning for devices…'),
-                          ],
-                        ),
-                      );
-                    }
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: devices.length,
-                      itemBuilder: (ctx, i) {
-                        final device = devices[i];
-                        return ListTile(
-                          leading: const Icon(Icons.cast),
-                          title: Text(device.friendlyName),
-                          subtitle: device.modelName != null
-                              ? Text(device.modelName!)
-                              : null,
-                          onTap: () {
-                            sessionManager.startSessionWithDevice(device);
-                            Navigator.of(ctx).pop();
-                          },
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-
-    await discovery.stopDiscovery();
-  }
-
   // ── Skip interval ────────────────────────────────────────────────────────────
 
   Future<void> _loadSkipInterval() async {
@@ -338,73 +223,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
   // ── Speed ────────────────────────────────────────────────────────────────────
 
   void _showSpeedDialog() {
-    double tempSpeed = _speed;
-    final originalSpeed = _speed;
-
-    showDialog<bool>(
+    showSpeedDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          final theme = Theme.of(ctx);
-          return AlertDialog(
-            title: const Text('Playback speed'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  fmtSpeed(tempSpeed),
-                  style: theme.textTheme.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Slider(
-                  value: tempSpeed,
-                  min: 0.5,
-                  max: 3.0,
-                  divisions: 50, // 0.05× steps
-                  onChanged: (v) {
-                    setDialogState(() => tempSpeed = v);
-                    _audioHandler.setSpeed(v);
-                  },
-                ),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  alignment: WrapAlignment.center,
-                  children: _commonSpeeds.map((s) {
-                    final active = (tempSpeed - s).abs() < 0.01;
-                    return ChoiceChip(
-                      label: Text(fmtSpeed(s)),
-                      selected: active,
-                      onSelected: (_) {
-                        setDialogState(() => tempSpeed = s);
-                        _audioHandler.setSpeed(s);
-                      },
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  _audioHandler.setSpeed(originalSpeed);
-                  Navigator.pop(ctx, false);
-                },
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Done'),
-              ),
-            ],
-          );
-        },
-      ),
-    ).then((confirmed) {
-      if (confirmed == true) {
-        setState(() => _speed = tempSpeed);
-      } else {
-        setState(() => _speed = originalSpeed);
+      currentSpeed: _speed,
+      audioHandler: _audioHandler,
+    ).then((newSpeed) {
+      if (newSpeed != null) {
+        setState(() => _speed = newSpeed);
       }
     });
   }
@@ -412,55 +237,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   // ── Custom sleep timer ────────────────────────────────────────────────────────
 
   Future<void> _showCustomTimerDialog() async {
-    int minutes = 20;
-    final result = await showDialog<int>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          final theme = Theme.of(ctx);
-          return AlertDialog(
-            title: const Text('Custom sleep timer'),
-            content: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove_rounded),
-                  tooltip: 'Decrease',
-                  onPressed: minutes > 1
-                      ? () => setDialogState(() => minutes--)
-                      : null,
-                ),
-                SizedBox(
-                  width: 88,
-                  child: Text(
-                    '$minutes min',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add_rounded),
-                  tooltip: 'Increase',
-                  onPressed: minutes < 180
-                      ? () => setDialogState(() => minutes++)
-                      : null,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, minutes),
-                child: const Text('Set'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+    final result = await showCustomTimerDialog(context);
     if (result != null) {
       _setTimer((
         label: '$result min',
@@ -482,133 +259,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool get _timerActive => _sleepCtrl.isActive;
 
   Future<void> _showChapterList(BuildContext context) async {
-    final book = widget.book;
-    final isM4b = book.chapters.isNotEmpty;
-    final chapCount = isM4b ? book.chapters.length : book.audioFiles.length;
-
-    await showModalBottomSheet<void>(
+    await showChapterListSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.3,
-          maxChildSize: 0.85,
-          expand: false,
-          builder: (ctx, scrollCtrl) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(ctx).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Chapters',
-                    style: Theme.of(ctx).textTheme.titleMedium,
-                  ),
-                ),
-                Expanded(
-                  // The chapter list is a StatefulWidget-scoped sheet, so it
-                  // can't subscribe to streams itself. We pass _currentChapterIndex
-                  // from state (which is already live-updated) and rebuild the
-                  // sheet via setState whenever the chapter changes.
-                  child: isM4b
-                      ? _chapterListView(
-                          scrollCtrl: scrollCtrl,
-                          count: chapCount,
-                          currentIndex: _currentChapterIndex,
-                          title: (i) => book.chapters[i].title,
-                          duration: (i) {
-                            final start = book.chapters[i].start;
-                            final end = i + 1 < book.chapters.length
-                                ? book.chapters[i + 1].start
-                                : (book.duration ?? Duration.zero);
-                            return end > start ? end - start : null;
-                          },
-                          onTap: (i) {
-                            _audioHandler.seek(book.chapters[i].start);
-                            Navigator.of(context).pop();
-                          },
-                        )
-                      : _chapterListView(
-                          scrollCtrl: scrollCtrl,
-                          count: chapCount,
-                          currentIndex: _currentChapterIndex,
-                          title: (i) => book.chapterNames.isNotEmpty
-                              ? book.chapterNames[i]
-                              : p.basenameWithoutExtension(book.audioFiles[i]),
-                          duration: (i) => i < book.chapterDurations.length
-                              ? book.chapterDurations[i]
-                              : null,
-                          onTap: (i) {
-                            _audioHandler.player
-                                .seek(Duration.zero, index: i);
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _chapterListView({
-    required ScrollController scrollCtrl,
-    required int count,
-    required int currentIndex,
-    required String Function(int) title,
-    required void Function(int) onTap,
-    Duration? Function(int)? duration,
-  }) {
-    final theme = Theme.of(context);
-    return ListView.builder(
-      controller: scrollCtrl,
-      itemCount: count,
-      itemBuilder: (ctx, i) {
-        final isCurrent = i == currentIndex;
-        final dur = duration?.call(i);
-        return ListTile(
-          leading: isCurrent
-              ? Icon(Icons.volume_up_rounded,
-                  color: theme.colorScheme.primary, size: 20)
-              : Text(
-                  '${i + 1}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-                ),
-          title: Text(
-            title(i),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: isCurrent ? FontWeight.bold : null,
-              color: isCurrent ? theme.colorScheme.primary : null,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: dur != null && dur > Duration.zero
-              ? Text(
-                  fmtHM(dur),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                  ),
-                )
-              : null,
-          onTap: () => onTap(i),
-        );
-      },
+      book: widget.book,
+      currentChapterIndex: _currentChapterIndex,
+      audioHandler: _audioHandler,
     );
   }
 
@@ -738,7 +393,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 color: connected ? Theme.of(context).colorScheme.primary : null,
                 onPressed: connected
                     ? GoogleCastSessionManager.instance.endSessionAndStopCasting
-                    : _showCastPicker,
+                    : () => showCastPicker(context),
               );
             },
           ),
@@ -1171,35 +826,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
       ]),
     );
   }
-}
-
-// ── Pure helpers (testable) ───────────────────────────────────────────────────
-
-/// Formats a speed value as e.g. "1.0×", "1.25×", "0.75×".
-/// Values divisible by 0.1 get one decimal; others get two.
-String fmtSpeed(double s) {
-  final str = s.toStringAsFixed(2);
-  return '${str.endsWith('0') ? s.toStringAsFixed(1) : str}×';
-}
-
-/// Formats a duration as `H:MM:SS` (if ≥ 1 hour) or `MM:SS`.
-/// Negative durations are clamped to zero.
-String fmtHM(Duration d) {
-  if (d < Duration.zero) d = Duration.zero;
-  final h = d.inHours;
-  final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return h > 0 ? '$h:$m:$s' : '$m:$s';
-}
-
-/// Formats a duration always including hours: `H:MM:SS`.
-/// Used for bookmark timestamps so the format is consistent.
-String fmtHMSec(Duration d) {
-  if (d < Duration.zero) d = Duration.zero;
-  final h = d.inHours;
-  final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$h:$m:$s';
 }
 
 // ── Bookmarks sheet ───────────────────────────────────────────────────────────────────

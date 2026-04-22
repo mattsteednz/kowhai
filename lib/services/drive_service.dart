@@ -64,7 +64,7 @@ class _BearerClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     request.headers['Authorization'] = 'Bearer $token';
-    return _inner.send(request);
+    return _inner.send(request).timeout(const Duration(seconds: 30));
   }
 
   @override

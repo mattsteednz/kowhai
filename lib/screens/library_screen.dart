@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io' show File, SocketException;
-import 'dart:ui' show ImageFilter;
 import 'package:audio_service/audio_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +15,8 @@ import '../services/scanner_service.dart';
 import '../widgets/audio_handler_scope.dart';
 import '../widgets/audiobook_card.dart';
 import '../widgets/audiobook_list_tile.dart';
-import '../widgets/book_cover.dart';
+import '../widgets/library_overflow_menu.dart';
+import '../widgets/mini_player.dart';
 import '../widgets/sleep_timer_indicator.dart';
 import 'book_details_screen.dart';
 import 'history_screen.dart';
@@ -686,7 +686,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 : (_books != null && _books!.isNotEmpty ? _openSearch : null),
             tooltip: _isSearching ? 'Close search' : 'Search',
           ),
-          _OverflowMenu(
+          LibraryOverflowMenu(
             syncing: _syncing,
             onHistory: _openHistory,
             onRescan: _syncing ? null : _scan,
@@ -699,7 +699,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         children: [
           _searchBar(),
           Expanded(child: _body()),
-          _MiniPlayer(),
+          MiniPlayer(),
         ],
       ),
     );
@@ -1229,244 +1229,5 @@ class _LibraryScreenState extends State<LibraryScreen> {
         onDetailsPressed: () => _openDetails(context, books[i]),
       ),
     );
-  }
-}
-
-// ── Overflow menu ─────────────────────────────────────────────────────────────
-
-class _OverflowMenu extends StatefulWidget {
-  final bool syncing;
-  final VoidCallback onHistory;
-  final VoidCallback? onRescan;
-  final VoidCallback onSettings;
-
-  const _OverflowMenu({
-    required this.syncing,
-    required this.onHistory,
-    required this.onRescan,
-    required this.onSettings,
-  });
-
-  @override
-  State<_OverflowMenu> createState() => _OverflowMenuState();
-}
-
-class _OverflowMenuState extends State<_OverflowMenu> {
-  bool _open = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return PopupMenuButton<String>(
-      tooltip: 'More',
-      icon: Icon(
-        Icons.more_vert_rounded,
-        color: _open ? cs.primary : null,
-      ),
-      onOpened: () => setState(() => _open = true),
-      onCanceled: () => setState(() => _open = false),
-      onSelected: (value) {
-        setState(() => _open = false);
-        switch (value) {
-          case 'history':  widget.onHistory();  break;
-          case 'rescan':   widget.onRescan?.call(); break;
-          case 'settings': widget.onSettings(); break;
-        }
-      },
-      itemBuilder: (_) => [
-        const PopupMenuItem(
-          value: 'history',
-          child: ListTile(
-            leading: Icon(Icons.history_rounded),
-            title: Text('Listen history'),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-        PopupMenuItem(
-          value: 'rescan',
-          enabled: !widget.syncing,
-          child: ListTile(
-            leading: widget.syncing
-                ? const SizedBox(
-                    width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh_rounded),
-            title: const Text('Rescan library'),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'settings',
-          child: ListTile(
-            leading: Icon(Icons.settings_rounded),
-            title: Text('Settings'),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Mini player ───────────────────────────────────────────────────────────────
-
-class _MiniPlayer extends StatelessWidget {
-  const _MiniPlayer();
-
-  @override
-  Widget build(BuildContext context) {
-    final ah = AudioHandlerScope.of(context).audioHandler;
-    return StreamBuilder<PlaybackState>(
-      stream: ah.playbackState,
-      builder: (context, snap) {
-        final state = snap.data;
-        final book = ah.currentBook;
-        if (book == null ||
-            state == null ||
-            state.processingState == AudioProcessingState.idle) {
-          return const SizedBox.shrink();
-        }
-
-        final playing = state.playing;
-        final theme = Theme.of(context);
-
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Thin progress bar (global book progress)
-            StreamBuilder<Duration>(
-              stream: ah.effectivePositionStream,
-              builder: (_, posSnap) {
-                final totalMs =
-                    book.duration?.inMilliseconds.toDouble() ?? 0;
-                if (totalMs <= 0) {
-                  return LinearProgressIndicator(
-                    value: 0,
-                    minHeight: 2,
-                    backgroundColor:
-                        theme.colorScheme.surfaceContainerHighest,
-                  );
-                }
-                final idx = ah.isCasting ? 0 : (ah.player.currentIndex ?? 0);
-                int offsetMs = 0;
-                for (int i = 0;
-                    i < idx && i < book.chapterDurations.length;
-                    i++) {
-                  offsetMs += book.chapterDurations[i].inMilliseconds;
-                }
-                final globalMs = offsetMs +
-                    (posSnap.data?.inMilliseconds ?? 0);
-                return LinearProgressIndicator(
-                  value: (globalMs / totalMs).clamp(0.0, 1.0),
-                  minHeight: 2,
-                  backgroundColor:
-                      theme.colorScheme.surfaceContainerHighest,
-                );
-              },
-            ),
-            ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Material(
-                  color: theme.colorScheme.surface.withValues(alpha: 0.85),
-                  child: InkWell(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => PlayerScreen(book: book)),
-                    ),
-                    child: SafeArea(
-                      top: false,
-                      child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
-                  child: Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: BookCover(book: book, iconSize: 28),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              book.title,
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.w600),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            StreamBuilder<Duration>(
-                              stream: ah.effectivePositionStream,
-                              builder: (_, posSnap) {
-                                final remaining =
-                                    _remaining(ah, book, posSnap.data);
-                                if (remaining == null) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Text(
-                                  _fmtRemaining(remaining),
-                                  style: theme.textTheme.bodySmall
-                                      ?.copyWith(
-                                          color: theme
-                                              .colorScheme.onSurface
-                                              .withValues(alpha: 0.6)),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(playing
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded),
-                        tooltip: playing ? 'Pause' : 'Play',
-                        onPressed: playing
-                            ? ah.pause
-                            : ah.play,
-                      ),
-                    ],
-                  ),
-                    ),
-                    ), // SafeArea
-                  ), // InkWell
-                ), // Material
-              ), // BackdropFilter
-            ), // ClipRect
-          ],
-        );
-      },
-    );
-  }
-
-  Duration? _remaining(
-      AudioVaultHandler ah, Audiobook book, Duration? chapterPos) {
-    final totalMs = book.duration?.inMilliseconds;
-    if (totalMs == null || totalMs == 0) return null;
-    final idx = ah.isCasting ? 0 : (ah.player.currentIndex ?? 0);
-    int offsetMs = 0;
-    for (int i = 0; i < idx && i < book.chapterDurations.length; i++) {
-      offsetMs += book.chapterDurations[i].inMilliseconds;
-    }
-    final globalMs = offsetMs + (chapterPos?.inMilliseconds ?? 0);
-    final remainingMs = (totalMs - globalMs).clamp(0, totalMs);
-    return Duration(milliseconds: remainingMs);
-  }
-
-  String _fmtRemaining(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    if (h > 0) return '${h}h ${m}m left';
-    return '${m}m left';
   }
 }
