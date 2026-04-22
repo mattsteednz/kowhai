@@ -2,6 +2,23 @@
 
 All notable changes to AudioVault are documented here.
 
+## [1.6.1] — 2026-04-22
+
+### Fixed
+
+- **Drive onboarding scan** — Selecting a Google Drive folder during onboarding now immediately triggers a scan; new users no longer see an empty library that requires a manual rescan.
+- **Download icon visibility** — Drive book download icon now sits inside a semi-transparent dark circle, making it visible on light-coloured covers.
+- **Sleep timer sheet** — Now scrollable on small screens; all options including Custom… are reachable without the sheet expanding to full height.
+- **Speed sheet** — Removed Cancel/Done buttons; dismissing keeps the last-set speed, consistent with other player sheets. Title left-aligned.
+- **Library filter/sort sheets** — Aligned to player sheet style (manual drag handle, `titleMedium`, `SafeArea`). Sort sheet Cancel button removed — dismiss by backdrop tap or drag.
+- **Player "remaining overall" label** — Shortened to "left".
+
+### Changed
+
+- **Placeholder tile colours** — Switched from dark jewel tones to lighter muted mid-tones, less overpowering on the light theme.
+
+---
+
 ## [1.6.0] — 2026-04-22
 
 ### Changed
