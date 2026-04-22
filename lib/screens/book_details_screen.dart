@@ -12,6 +12,7 @@ import '../services/drive_library_service.dart';
 import '../services/position_service.dart';
 import '../widgets/audio_handler_scope.dart';
 import '../widgets/book_cover.dart';
+import '../utils/formatters.dart';
 import 'player_screen.dart';
 
 class BookDetailsScreen extends StatelessWidget {
