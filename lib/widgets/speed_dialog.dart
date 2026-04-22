@@ -6,25 +6,24 @@ const _commonSpeeds = [0.75, 1.0, 1.25, 1.5, 2.0, 2.5];
 
 /// Shows a playback speed picker as a bottom sheet.
 ///
-/// The sheet live-previews the speed via [audioHandler.setSpeed]. If the user
-/// cancels, the original speed is restored. Returns the new speed if confirmed,
-/// or `null` if cancelled.
-Future<double?> showSpeedDialog({
+/// Speed changes apply live. Dismissing (backdrop tap, drag-down, back gesture)
+/// keeps whatever speed was last set. Returns the final speed.
+Future<double> showSpeedDialog({
   required BuildContext context,
   required double currentSpeed,
   required AudioVaultHandler audioHandler,
 }) async {
   double tempSpeed = currentSpeed;
-  final originalSpeed = currentSpeed;
 
-  final confirmed = await showModalBottomSheet<bool>(
+  await showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setSheetState) {
         final theme = Theme.of(ctx);
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -39,8 +38,11 @@ Future<double?> showSpeedDialog({
                     ),
                   ),
                 ),
-                Text('Playback speed',
-                    style: theme.textTheme.titleMedium),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Playback speed',
+                      style: theme.textTheme.titleMedium),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   fmtSpeed(tempSpeed),
@@ -73,25 +75,6 @@ Future<double?> showSpeedDialog({
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        audioHandler.setSpeed(originalSpeed);
-                        Navigator.pop(ctx, false);
-                      },
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Done'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -100,12 +83,7 @@ Future<double?> showSpeedDialog({
     ),
   );
 
-  if (confirmed == true) {
-    return tempSpeed;
-  } else {
-    audioHandler.setSpeed(originalSpeed);
-    return null;
-  }
+  return tempSpeed;
 }
 
 /// Shows a custom sleep timer dialog. Returns the chosen minutes, or `null`

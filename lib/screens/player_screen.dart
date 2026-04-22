@@ -228,9 +228,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       currentSpeed: _speed,
       audioHandler: _audioHandler,
     ).then((newSpeed) {
-      if (newSpeed != null) {
-        setState(() => _speed = newSpeed);
-      }
+      setState(() => _speed = newSpeed);
     });
   }
 
@@ -252,53 +250,68 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Future<void> _showSleepTimerSheet(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) {
         final theme = Theme.of(ctx);
+        final maxHeight = MediaQuery.of(ctx).size.height * 0.75;
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: Text('Sleep timer',
-                    style: theme.textTheme.titleMedium),
-              ),
-              ..._timerOpts.map((opt) {
-                final isActive = (opt.endOfChapter && _sleepCtrl.stopAtChapterEnd.value) ||
-                    (!opt.endOfChapter && opt.duration == null && !_timerActive);
-                return ListTile(
-                  title: Text(opt.label),
-                  trailing: isActive
-                      ? Icon(Icons.check_rounded,
-                          color: theme.colorScheme.primary)
-                      : null,
-                  onTap: () {
-                    _setTimer(opt);
-                    Navigator.pop(ctx);
-                  },
-                );
-              }),
-              const Divider(height: 1),
-              ListTile(
-                title: const Text('Custom…'),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await _showCustomTimerDialog();
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Sleep timer',
+                        style: theme.textTheme.titleMedium),
+                  ),
+                ),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      ..._timerOpts.map((opt) {
+                        final isActive = (opt.endOfChapter && _sleepCtrl.stopAtChapterEnd.value) ||
+                            (!opt.endOfChapter && opt.duration == null && !_timerActive);
+                        return ListTile(
+                          title: Text(opt.label),
+                          trailing: isActive
+                              ? Icon(Icons.check_rounded,
+                                  color: theme.colorScheme.primary)
+                              : null,
+                          onTap: () {
+                            _setTimer(opt);
+                            Navigator.pop(ctx);
+                          },
+                        );
+                      }),
+                      const Divider(height: 1),
+                      ListTile(
+                        title: const Text('Custom…'),
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          await _showCustomTimerDialog();
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
