@@ -7,6 +7,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/audiobook.dart';
 
+const _openLibrarySearchUrl = 'https://openlibrary.org/search.json';
+const _openLibraryCoverUrl = 'https://covers.openlibrary.org/b/id';
+
 class EnrichmentService {
   EnrichmentService({http.Client? client}) : _client = client ?? http.Client();
 
@@ -190,7 +193,7 @@ class EnrichmentService {
     final encodedTitle = Uri.encodeComponent(title);
     final searchResp = await _client
         .get(Uri.parse(
-            'https://openlibrary.org/search.json?title=$encodedTitle&limit=1'))
+            '$_openLibrarySearchUrl?title=$encodedTitle&limit=1'))
         .timeout(const Duration(seconds: 10));
 
     if (searchResp.statusCode != 200) return null;
@@ -208,7 +211,7 @@ class EnrichmentService {
   Future<String?> _downloadCover(String coverId) async {
     final coverResp = await _client
         .get(Uri.parse(
-            'https://covers.openlibrary.org/b/id/$coverId-L.jpg'))
+            '$_openLibraryCoverUrl/$coverId-L.jpg'))
         .timeout(const Duration(seconds: 15));
 
     if (!isValidCoverResponse(
