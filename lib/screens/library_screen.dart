@@ -1195,38 +1195,44 @@ class _LibraryScreenState extends State<LibraryScreen> {
       };
 
   Widget _grid(List<Audiobook> books) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.68,
-      ),
-      itemCount: books.length,
-      itemBuilder: (context, i) => AudiobookCard(
-        book: books[i],
-        isActive: books[i].path == _activePath && _isPlaying,
-        status: _statuses[books[i].path] ?? BookStatus.notStarted,
-        placeholderIndex: i,
-        onTap: () => _openPlayer(context, books[i]),
-        onLongPress: () => _openDetails(context, books[i]),
+    return RefreshIndicator(
+      onRefresh: _scan,
+      child: GridView.builder(
+        padding: const EdgeInsets.all(12),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 0.68,
+        ),
+        itemCount: books.length,
+        itemBuilder: (context, i) => AudiobookCard(
+          book: books[i],
+          isActive: books[i].path == _activePath && _isPlaying,
+          status: _statuses[books[i].path] ?? BookStatus.notStarted,
+          placeholderIndex: i,
+          onTap: () => _openPlayer(context, books[i]),
+          onLongPress: () => _openDetails(context, books[i]),
+        ),
       ),
     );
   }
 
   Widget _list(List<Audiobook> books) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: books.length,
-      separatorBuilder: (_, __) => const Divider(height: 1, indent: 88),
-      itemBuilder: (context, i) => AudiobookListTile(
-        book: books[i],
-        isActive: books[i].path == _activePath && _isPlaying,
-        status: _statuses[books[i].path] ?? BookStatus.notStarted,
-        placeholderIndex: i,
-        onTap: () => _openPlayer(context, books[i]),
-        onDetailsPressed: () => _openDetails(context, books[i]),
+    return RefreshIndicator(
+      onRefresh: _scan,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: books.length,
+        separatorBuilder: (_, __) => const Divider(height: 1, indent: 88),
+        itemBuilder: (context, i) => AudiobookListTile(
+          book: books[i],
+          isActive: books[i].path == _activePath && _isPlaying,
+          status: _statuses[books[i].path] ?? BookStatus.notStarted,
+          placeholderIndex: i,
+          onTap: () => _openPlayer(context, books[i]),
+          onDetailsPressed: () => _openDetails(context, books[i]),
+        ),
       ),
     );
   }
