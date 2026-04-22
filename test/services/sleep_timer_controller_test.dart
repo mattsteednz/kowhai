@@ -2,24 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:audiovault/services/sleep_timer_controller.dart';
 
 void main() {
-  group('sleepTimerTick (controller copy)', () {
-    test('subtracts one second when above zero', () {
-      final r = sleepTimerTick(const Duration(seconds: 10));
-      expect(r.next, const Duration(seconds: 9));
-      expect(r.shouldFire, isFalse);
-    });
-
-    test('fires at exactly one second remaining', () {
-      final r = sleepTimerTick(const Duration(seconds: 1));
-      expect(r.next, Duration.zero);
-      expect(r.shouldFire, isTrue);
-    });
-
-    test('fires immediately at zero', () {
-      final r = sleepTimerTick(Duration.zero);
-      expect(r.shouldFire, isTrue);
-    });
-  });
+  // sleepTimerTick is tested in player_helpers_test.dart — no duplicate here.
 
   group('SleepTimerController', () {
     test('starts inactive', () {

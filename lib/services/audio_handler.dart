@@ -218,22 +218,6 @@ class AudioVaultHandler extends BaseAudioHandler {
     }
   }
 
-  // ── Position persistence ───────────────────────────────────────────────────
-
-  /// Kept as a redirect for existing tests; real implementation is in
-  /// `position_persister.dart`.
-  @visibleForTesting
-  static int calculateGlobalPosition({
-    required int chapterIndex,
-    required Duration chapterPosition,
-    required List<Duration> chapterDurations,
-  }) =>
-      pp.calculateGlobalPosition(
-        chapterIndex: chapterIndex,
-        chapterPosition: chapterPosition,
-        chapterDurations: chapterDurations,
-      );
-
   @visibleForTesting
   static Duration getRewindOffset(Duration pausedDuration) {
     if (pausedDuration >= const Duration(hours: 24)) {

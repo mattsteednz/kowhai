@@ -11,9 +11,13 @@ Audiobook _book(String title, {String? coverPath}) => Audiobook(
 
 void main() {
   group('applyCachedCovers', () {
-    test('empty cache returns books unchanged', () {
+    test('empty cache (or enrichment disabled) returns books unchanged', () {
       final books = [_book('Book A'), _book('Book B')];
-      expect(applyCachedCovers(books, {}), same(books));
+      // Both the "no cache entries" and "enrichment disabled" cases pass an
+      // empty map, so no cached covers should be applied.
+      final result = applyCachedCovers(books, {});
+      expect(result, same(books));
+      expect(result.every((b) => b.coverImagePath == null), isTrue);
     });
 
     test('applies cached cover to book without any artwork', () {
@@ -36,14 +40,6 @@ void main() {
       final result = applyCachedCovers(books, cache);
       expect(result[0].coverImagePath, isNull); // Book A unchanged
       expect(result[1].coverImagePath, '/cache/cover_b.jpg');
-    });
-
-    test('when enrichment disabled (empty map), all books show default', () {
-      // Simulates the cache-flush behaviour: scan with enrichment off
-      // passes an empty map, so no cached covers are applied.
-      final books = [_book('Book A'), _book('Book B')];
-      final result = applyCachedCovers(books, {});
-      expect(result.every((b) => b.coverImagePath == null), isTrue);
     });
 
     test('handles empty book list gracefully', () {

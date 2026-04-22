@@ -49,6 +49,25 @@ void main() {
     });
   });
 
+  group('fmtHMSec', () {
+    test('always includes hours even for short durations', () {
+      expect(fmtHMSec(Duration.zero), '0:00:00');
+      expect(fmtHMSec(const Duration(seconds: 9)), '0:00:09');
+      expect(fmtHMSec(const Duration(minutes: 5, seconds: 3)), '0:05:03');
+    });
+
+    test('formats multi-hour durations', () {
+      expect(fmtHMSec(const Duration(hours: 2, minutes: 3, seconds: 4)),
+          '2:03:04');
+      expect(fmtHMSec(const Duration(hours: 10, minutes: 0, seconds: 7)),
+          '10:00:07');
+    });
+
+    test('negative durations clamp to zero', () {
+      expect(fmtHMSec(const Duration(seconds: -5)), '0:00:00');
+    });
+  });
+
   group('sleepTimerTick', () {
     test('decrements by one second when > 1s remains', () {
       final r = sleepTimerTick(const Duration(seconds: 10));
