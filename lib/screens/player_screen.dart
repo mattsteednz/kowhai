@@ -709,7 +709,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(
-                    '${_fmtOverallRemaining(book.duration! - displayedSec)} remaining overall',
+                    '${_fmtOverallRemaining(book.duration! - displayedSec)} left',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
