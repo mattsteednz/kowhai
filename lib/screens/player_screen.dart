@@ -466,7 +466,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
           button: hasChapters,
           label: hasChapters ? 'Open chapter list' : null,
           child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: hasChapters ? () => _showChapterList(context) : null,
+            child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
             children: [
               Row(
@@ -499,6 +502,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   ),
                 ),
             ],
+          ),
           ),
         ),
       );
