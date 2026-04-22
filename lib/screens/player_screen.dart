@@ -261,7 +261,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (_sleepCtrl.stopAtChapterEnd.value) return 'End of ch.';
     final remaining = _sleepCtrl.remaining.value;
     if (remaining != null) return fmtHM(remaining);
-    return 'Off';
+    return 'Sleep';
   }
 
   bool get _timerActive => _sleepCtrl.isActive;
