@@ -29,6 +29,7 @@
 ///
 /// EXPECTED OUTCOME: All tests PASS on unfixed code (confirms baseline behavior).
 /// EXPECTED OUTCOME: All tests continue to PASS after the fix is implemented.
+library;
 
 import 'dart:async';
 
@@ -317,7 +318,7 @@ void main() {
 
   /// Wraps [child] in a MaterialApp with AudioHandlerScope so widgets that
   /// depend on AudioHandlerScope.of(context) work in tests.
-  Widget _wrapWithApp(Widget child) {
+  Widget wrapWithApp(Widget child) {
     return AudioHandlerScope(
       audioHandler: fakeAudioHandler,
       themeModeNotifier: ValueNotifier(ThemeMode.system),
@@ -330,7 +331,7 @@ void main() {
   /// Pumps [LibraryScreen] and waits for the initial scan to complete.
   /// The mock setup ensures `loadDriveBooks` returns [undownloadedDriveBook].
   Future<void> pumpLibraryScreen(WidgetTester tester) async {
-    await tester.pumpWidget(_wrapWithApp(const LibraryScreen()));
+    await tester.pumpWidget(wrapWithApp(const LibraryScreen()));
     // Allow the async _initLibrary + _scan to complete.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -360,7 +361,7 @@ void main() {
   /// `connectivity_plus` uses the `dev.fluttercommunity.plus/connectivity`
   /// method channel. We stub `check` to return the encoded connectivity list
   /// so that `Connectivity().checkConnectivity()` returns [results] in tests.
-  void _stubConnectivity(List<ConnectivityResult> results) {
+  void stubConnectivity(List<ConnectivityResult> results) {
     // connectivity_plus encodes results as a list of strings.
     final encoded = results.map((r) => r.name).toList();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -411,7 +412,7 @@ void main() {
             // Stub the connectivity platform channel to return mobile data.
             // This ensures `_showDriveDownloadSheet` takes the mobile-data
             // branch (isWifi == false) and fetches totalSizeBytes.
-            _stubConnectivity(connectivityState);
+            stubConnectivity(connectivityState);
 
             await pumpLibraryScreen(tester);
 
@@ -458,7 +459,7 @@ void main() {
         '(direct connectivity stub via real mobile-data path)',
         (tester) async {
           // Stub connectivity as mobile data so the mobile-data branch is taken.
-          _stubConnectivity([ConnectivityResult.mobile]);
+          stubConnectivity([ConnectivityResult.mobile]);
 
           await pumpLibraryScreen(tester);
 
@@ -580,7 +581,7 @@ void main() {
           'Drive book (audioFiles=$downloaded, totalFileCount=$total) '
           '(Requirement 3.3)',
           (tester) async {
-            await tester.pumpWidget(_wrapWithApp(
+            await tester.pumpWidget(wrapWithApp(
               BookDetailsScreen(book: book),
             ));
             await tester.pump();
@@ -650,7 +651,7 @@ void main() {
           '"${book.title}" (audioFiles=${book.audioFiles.length}) '
           '(Requirement 3.4)',
           (tester) async {
-            await tester.pumpWidget(_wrapWithApp(
+            await tester.pumpWidget(wrapWithApp(
               BookDetailsScreen(book: book),
             ));
             await tester.pump();
@@ -704,7 +705,7 @@ void main() {
         '"Download to device" calls startDownload and shows no bottom sheet '
         '(Requirement 3.5)',
         (tester) async {
-          await tester.pumpWidget(_wrapWithApp(
+          await tester.pumpWidget(wrapWithApp(
             BookDetailsScreen(book: undownloadedDriveBook),
           ));
           await tester.pump();

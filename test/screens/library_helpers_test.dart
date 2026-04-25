@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:audiovault/models/audiobook.dart';
 import 'package:audiovault/screens/library_screen.dart';
 import 'package:audiovault/services/position_service.dart';
+import 'package:audiovault/utils/formatters.dart';
 
 Audiobook _book(String title) =>
     Audiobook(title: title, path: '/library/$title', audioFiles: const []);
