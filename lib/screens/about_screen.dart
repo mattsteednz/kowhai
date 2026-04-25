@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/github_release_service.dart';
 import 'licenses_screen.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -11,13 +12,29 @@ class AboutScreen extends StatefulWidget {
 }
 
 class _AboutScreenState extends State<AboutScreen> {
-  String _version = '';
+  String _installedVersion = '';
+  GithubRelease? _latestRelease;
+  bool _checkingUpdate = false;
 
   @override
   void initState() {
     super.initState();
-    PackageInfo.fromPlatform().then((info) {
-      if (mounted) setState(() => _version = 'Version ${info.version}');
+    _loadVersionInfo();
+  }
+
+  Future<void> _loadVersionInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() {
+      _installedVersion = info.version;
+      _checkingUpdate = true;
+    });
+
+    final release = await GithubReleaseService().fetchLatest();
+    if (!mounted) return;
+    setState(() {
+      _latestRelease = release;
+      _checkingUpdate = false;
     });
   }
 
@@ -26,9 +43,29 @@ class _AboutScreenState extends State<AboutScreen> {
         mode: LaunchMode.externalApplication,
       );
 
+  /// Returns true if [latest] is a newer semver than [installed].
+  bool _isNewer(String installed, String latest) {
+    List<int> parse(String v) => v
+        .split('.')
+        .map((p) => int.tryParse(p) ?? 0)
+        .toList();
+    final a = parse(installed);
+    final b = parse(latest);
+    for (var i = 0; i < b.length; i++) {
+      final ai = i < a.length ? a[i] : 0;
+      if (b[i] > ai) return true;
+      if (b[i] < ai) return false;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final hasUpdate = _latestRelease != null &&
+        _installedVersion.isNotEmpty &&
+        _isNewer(_installedVersion, _latestRelease!.version);
 
     return Scaffold(
       appBar: AppBar(title: const Text('About AudioVault')),
@@ -47,12 +84,69 @@ class _AboutScreenState extends State<AboutScreen> {
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  _version.isEmpty ? '' : _version,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                if (_installedVersion.isNotEmpty)
+                  Text(
+                    'Version $_installedVersion',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
                   ),
-                ),
+                const SizedBox(height: 8),
+                // ── Update status ──────────────────────────────────────────
+                if (_checkingUpdate)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.4),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Checking for updates…',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  )
+                else if (hasUpdate)
+                  GestureDetector(
+                    onTap: () => _open(_latestRelease!.url),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.new_releases_rounded,
+                            size: 16, color: theme.colorScheme.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          'v${_latestRelease!.version} available',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.open_in_new,
+                            size: 13, color: theme.colorScheme.primary),
+                      ],
+                    ),
+                  )
+                else if (_latestRelease != null)
+                  Text(
+                    'Up to date',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -86,6 +180,21 @@ class _AboutScreenState extends State<AboutScreen> {
             trailing: const Icon(Icons.open_in_new, size: 18),
             onTap: () =>
                 _open('https://github.com/mattsteednz/audiovault'),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          ),
+          ListTile(
+            leading: const Icon(Icons.download_rounded),
+            title: const Text('Latest release'),
+            subtitle: Text(
+              _latestRelease != null
+                  ? 'v${_latestRelease!.version} on GitHub'
+                  : 'github.com/mattsteednz/audiovault/releases',
+            ),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => _open(
+              _latestRelease?.url ?? GithubReleaseService.releasesPageUrl,
+            ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           ),
