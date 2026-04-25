@@ -3,7 +3,7 @@ import 'package:audiovault/models/bookmark.dart';
 
 void main() {
   group('Bookmark', () {
-    Bookmark _bm({
+    Bookmark bm({
       int? id,
       String bookPath = '/books/dune',
       int chapterIndex = 3,
@@ -24,7 +24,7 @@ void main() {
 
     group('toMap / fromMap round-trip', () {
       test('preserves all fields including notes', () {
-        final original = _bm(id: 42);
+        final original = bm(id: 42);
         final restored = Bookmark.fromMap(original.toMap());
         expect(restored.id, 42);
         expect(restored.bookPath, '/books/dune');
@@ -36,13 +36,13 @@ void main() {
       });
 
       test('handles null id (new bookmark before insert)', () {
-        final original = _bm(id: null);
+        final original = bm(id: null);
         final map = original.toMap();
         expect(map.containsKey('id'), isFalse);
       });
 
       test('handles null notes', () {
-        final original = _bm(notes: null);
+        final original = bm(notes: null);
         final restored = Bookmark.fromMap(original.toMap());
         expect(restored.notes, isNull);
       });
@@ -50,7 +50,7 @@ void main() {
 
     group('copyWith', () {
       test('overrides label and notes', () {
-        final original = _bm();
+        final original = bm();
         final copy = original.copyWith(label: 'New label', notes: 'New notes');
         expect(copy.label, 'New label');
         expect(copy.notes, 'New notes');
@@ -62,7 +62,7 @@ void main() {
       });
 
       test('preserves original values when no overrides given', () {
-        final original = _bm(label: 'Keep', notes: 'Also keep');
+        final original = bm(label: 'Keep', notes: 'Also keep');
         final copy = original.copyWith();
         expect(copy.label, 'Keep');
         expect(copy.notes, 'Also keep');

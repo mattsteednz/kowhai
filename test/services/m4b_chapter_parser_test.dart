@@ -10,7 +10,7 @@ Uint8List _box(String type, Uint8List data) {
   final buf = ByteData(8);
   buf.setUint32(0, size, Endian.big);
   final header = Uint8List(8);
-  for (int i = 0; i < 8; i++) header[i] = buf.getUint8(i);
+  for (int i = 0; i < 8; i++) { header[i] = buf.getUint8(i); }
   header[4] = type.codeUnitAt(0);
   header[5] = type.codeUnitAt(1);
   header[6] = type.codeUnitAt(2);

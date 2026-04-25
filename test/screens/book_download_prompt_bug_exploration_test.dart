@@ -22,6 +22,7 @@
 ///
 /// EXPECTED OUTCOME: All tests FAIL on unfixed code (this is correct).
 /// EXPECTED OUTCOME: All tests PASS after the fix is implemented.
+library;
 
 import 'dart:async';
 
