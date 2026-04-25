@@ -2,6 +2,20 @@
 
 All notable changes to AudioVault are documented here.
 
+## [1.6.2] — 2026-04-25
+
+### Fixed
+
+- **Download prompt shows file size on WiFi** — The "Download" bottom sheet now always fetches and displays the book's file size regardless of connection type. Previously the size was only shown on mobile data; on WiFi the prompt showed a generic message with no size and an unlabelled "Download" button.
+- **"Start listening" on undownloaded Drive book** — Tapping "Start listening" on the book details screen for a Drive book that hasn't been downloaded no longer opens the player with no audio. It now shows the same download prompt as the library screen, including the file size.
+
+### Internal
+
+- Extracted `showDriveDownloadSheet` from `LibraryScreen` into `lib/utils/drive_download_sheet.dart` so both the library and book details screens share the same prompt logic.
+- Moved `formatBytes` from `library_screen.dart` to `lib/utils/formatters.dart`.
+
+---
+
 ## [1.6.1] — 2026-04-22
 
 ### Fixed

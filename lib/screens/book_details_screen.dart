@@ -12,6 +12,7 @@ import '../services/drive_library_service.dart';
 import '../services/position_service.dart';
 import '../widgets/audio_handler_scope.dart';
 import '../widgets/book_cover.dart';
+import '../utils/drive_download_sheet.dart';
 import '../utils/formatters.dart';
 import 'player_screen.dart';
 
@@ -289,7 +290,11 @@ class _ActionButtonsState extends State<_ActionButtons> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FilledButton.icon(
-          onPressed: () {
+          onPressed: () async {
+            if (isDrive && notDownloaded) {
+              await showDriveDownloadSheet(context, widget.book);
+              return;
+            }
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(

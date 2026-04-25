@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io' show File, SocketException;
 import 'package:audio_service/audio_service.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import '../models/audiobook.dart';
 import '../services/audio_handler.dart';
@@ -23,6 +22,7 @@ import 'history_screen.dart';
 import 'player_screen.dart';
 import 'settings_screen.dart';
 import '../locator.dart';
+import '../utils/drive_download_sheet.dart';
 
 enum _ViewMode { grid, list }
 
@@ -219,16 +219,6 @@ String friendlyScanError(Object error) {
   return "Couldn't scan the library. Try again, or check your folder in Settings.";
 }
 
-/// Human-readable byte size string (B / KB / MB / GB).
-String formatBytes(int bytes) {
-  if (bytes < 1024) return '$bytes B';
-  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
-  if (bytes < 1024 * 1024 * 1024) {
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-}
-
 class LibraryScreen extends StatefulWidget {
   /// When true, forces a Drive sync on first load regardless of the
   /// refresh-on-startup preference. Used by onboarding after Drive setup
@@ -247,6 +237,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Map<String, BookStatus> _statuses = {};
   String? _error;
   bool _syncing = false;
+  String _scanStatus = 'Scanning your library…';
   bool _hasLocalFolder = false;
   bool _hasDriveConfigured = false;
   Set<String> _syncFoundPaths = {};
@@ -357,6 +348,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     _syncFoundPaths = {};
     setState(() {
       _syncing = true;
+      _scanStatus = 'Scanning your library…';
       _error = null;
       // Intentionally NOT clearing _rawBooks or _books so existing
       // books remain visible while the resync runs in the background.
@@ -381,7 +373,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
         // rescanDrive syncs with Drive when connected; falls back to DB-only
         // when offline or not configured. loadDriveBooks skips the network.
         syncWithDrive
-            ? locator<DriveLibraryService>().rescanDrive()
+            ? locator<DriveLibraryService>().rescanDrive(
+                onProgress: (status) {
+                  if (mounted) setState(() => _scanStatus = status);
+                },
+              )
             : locator<DriveLibraryService>().loadDriveBooks(),
       ]);
       final driveBooks = results[1];
@@ -577,11 +573,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
         if (refreshed != null && refreshed.audioFiles.isNotEmpty) {
           book = refreshed;
         } else if (book.audioFiles.isEmpty) {
-          if (context.mounted) _showDriveDownloadSheet(context, book);
+          if (context.mounted) showDriveDownloadSheet(context, book);
           return;
         }
       } else if (book.audioFiles.isEmpty) {
-        if (context.mounted) _showDriveDownloadSheet(context, book);
+        if (context.mounted) showDriveDownloadSheet(context, book);
         return;
       }
     }
@@ -607,64 +603,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
         _applySort();
       }
     });
-  }
-
-  Future<void> _showDriveDownloadSheet(BuildContext context, Audiobook book) async {
-    final folderId = book.driveMetadata!.folderId;
-    final connectivity = await Connectivity().checkConnectivity();
-    final isWifi = connectivity.contains(ConnectivityResult.wifi) ||
-        connectivity.contains(ConnectivityResult.ethernet);
-
-    int? sizeBytes;
-    if (!isWifi) {
-      sizeBytes = await locator<DriveLibraryService>().totalSizeBytes(folderId);
-    }
-    if (!context.mounted) return;
-
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(book.title,
-                style: Theme.of(ctx).textTheme.titleMedium,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 8),
-            if (sizeBytes != null)
-              Text('You\'re on mobile data. This book is ${formatBytes(sizeBytes)}. '
-                  'Download anyway?')
-            else
-              const Text(
-                  'This book hasn\'t been downloaded yet. Download it to start listening.'),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  icon: const Icon(Icons.download_rounded),
-                  label: Text(sizeBytes != null
-                      ? 'Download (${formatBytes(sizeBytes)})'
-                      : 'Download'),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    locator<DriveLibraryService>().startDownload(folderId);
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   // ── Build ────────────────────────────────────────────────────────────────────
@@ -786,19 +724,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     if (allBooks.isEmpty) {
       if (_syncing) {
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Scanning your library…', textAlign: TextAlign.center),
-              ],
-            ),
-          ),
-        );
+        return _DriveScanOverlay(status: _scanStatus);
       }
       final content = emptyStateContent(
         hasLocalFolder: _hasLocalFolder,
@@ -1274,6 +1200,144 @@ class _LibraryScreenState extends State<LibraryScreen> {
           placeholderIndex: i,
           onTap: () => _openPlayer(context, books[i]),
           onDetailsPressed: () => _openDetails(context, books[i]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated overlay shown while the Drive library is being scanned for the
+/// first time. Designed to feel alive during what would otherwise be a blank
+/// wait — especially during onboarding.
+///
+/// Features:
+/// - Pulsing headphones icon (scale + opacity loop)
+/// - Status text that cross-fades between phases
+/// - A rotating audiobook tip that changes every few seconds
+class _DriveScanOverlay extends StatefulWidget {
+  final String status;
+
+  const _DriveScanOverlay({required this.status});
+
+  @override
+  State<_DriveScanOverlay> createState() => _DriveScanOverlayState();
+}
+
+class _DriveScanOverlayState extends State<_DriveScanOverlay>
+    with TickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseScale;
+  late final Animation<double> _pulseOpacity;
+
+  late final AnimationController _tipController;
+  int _tipIndex = 0;
+
+  static const _tips = [
+    'Tip: Tap the chapter label in the player to jump to any chapter.',
+    'Tip: Set the sleep timer to stop at the end of a chapter.',
+    'Tip: Add bookmarks while listening to save your favourite moments.',
+    'Tip: Your listening position syncs across devices via Drive.',
+    'Tip: Use the sort menu to find your next listen by author.',
+    'Tip: Download a book to listen without an internet connection.',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+
+    _pulseScale = Tween<double>(begin: 0.92, end: 1.08).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    _pulseOpacity = Tween<double>(begin: 0.65, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _tipController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          setState(() {
+            _tipIndex = (_tipIndex + 1) % _tips.length;
+          });
+          _tipController.forward(from: 0);
+        }
+      });
+    _tipController.forward();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _tipController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Pulsing icon
+            AnimatedBuilder(
+              animation: _pulseController,
+              builder: (_, __) => Opacity(
+                opacity: _pulseOpacity.value,
+                child: Transform.scale(
+                  scale: _pulseScale.value,
+                  child: Icon(
+                    Icons.headphones_rounded,
+                    size: 64,
+                    color: cs.primary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Cross-fading status text
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
+              child: Text(
+                widget.status,
+                key: ValueKey(widget.status),
+                style: Theme.of(context).textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 40),
+
+            // Rotating tip
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 500),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
+              child: Text(
+                _tips[_tipIndex],
+                key: ValueKey(_tipIndex),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.5),
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
       ),
     );

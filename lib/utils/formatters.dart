@@ -1,5 +1,15 @@
 // ── Pure helpers (testable) ───────────────────────────────────────────────────
 
+/// Human-readable byte size string (B / KB / MB / GB).
+String formatBytes(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+  if (bytes < 1024 * 1024 * 1024) {
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+}
+
 /// Formats a speed value as e.g. "1.0×", "1.25×", "0.75×".
 /// Values divisible by 0.1 get one decimal; others get two.
 String fmtSpeed(double s) {
