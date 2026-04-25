@@ -373,11 +373,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         // rescanDrive syncs with Drive when connected; falls back to DB-only
         // when offline or not configured. loadDriveBooks skips the network.
         syncWithDrive
-            ? locator<DriveLibraryService>().rescanDrive(
-                onProgress: (status) {
-                  if (mounted) setState(() => _scanStatus = status);
-                },
-              )
+            ? locator<DriveLibraryService>().rescanDrive()
             : locator<DriveLibraryService>().loadDriveBooks(),
       ]);
       final driveBooks = results[1];
