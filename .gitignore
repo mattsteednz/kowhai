@@ -25,9 +25,7 @@ migrate_working_dir/
 
 .amazonq/
 
-CLAUDE.md
 .claude/
-!.claude/commands/
 
 # Flutter/Dart/Pub related
 **/doc/api/
