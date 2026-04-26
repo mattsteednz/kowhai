@@ -205,6 +205,7 @@ class _AppEntryPointState extends State<_AppEntryPoint> {
 
     if (consent == null) {
       // First launch — show consent screen.
+      if (!mounted) return;
       setState(() => _consentDecided = false);
       return;
     }
@@ -215,6 +216,7 @@ class _AppEntryPointState extends State<_AppEntryPoint> {
 
     final path = await prefs.getLibraryPath();
     final driveFolder = await prefs.getDriveRootFolder();
+    if (!mounted) return;
     setState(() {
       _consentDecided = true;
       _hasLibrary = (path != null && path.isNotEmpty) || driveFolder != null;
@@ -229,6 +231,7 @@ class _AppEntryPointState extends State<_AppEntryPoint> {
 
     final path = await prefs.getLibraryPath();
     final driveFolder = await prefs.getDriveRootFolder();
+    if (!mounted) return;
     setState(() {
       _consentDecided = true;
       _hasLibrary = (path != null && path.isNotEmpty) || driveFolder != null;

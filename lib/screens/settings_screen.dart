@@ -143,7 +143,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _setAutoRewind(bool value) async {
+    final handler = AudioHandlerScope.of(context).audioHandler;
     await locator<PreferencesService>().setAutoRewind(value);
+    handler.updateAutoRewind(value);
     setState(() => _autoRewind = value);
   }
 

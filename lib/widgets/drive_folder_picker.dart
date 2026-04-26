@@ -41,11 +41,13 @@ class _DriveFolderPickerDialogState extends State<_DriveFolderPickerDialog> {
     });
     try {
       final roots = await widget.driveService.listRoots();
+      if (!mounted) return;
       setState(() {
         _current = roots;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -58,12 +60,14 @@ class _DriveFolderPickerDialogState extends State<_DriveFolderPickerDialog> {
     try {
       final children =
           await widget.driveService.listSubfolders(folder.id, isShared: folder.isShared);
+      if (!mounted) return;
       setState(() {
         _stack.add(_BreadcrumbEntry(folder: folder, siblings: _current));
         _current = children;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;

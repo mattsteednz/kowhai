@@ -59,7 +59,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   1. Either await the seek's effect (listen for first `positionStream` event after seek completes) or skip the immediate emit (let the next stream event broadcast the correct value).
   2. Add a fake-timer test that seeds a delayed positionStream and asserts no stale emission.
 
-### B7 — `setState` after `await` without `mounted` check
+### B7 — `setState` after `await` without `mounted` check ✅
 - **Location:** `lib/main.dart:202-236`, `lib/screens/onboarding_screen.dart:46-78`, `lib/screens/library_screen.dart:329-345`, others
 - **Rationale:** Pattern repeats across screens. On fast unmount (e.g. user backs out during scan/sign-in) Flutter throws and a crash is logged to Crashlytics. Easy mechanical fix.
 - **Priority:** P2
@@ -115,7 +115,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   1. Add `chapterStartMs(Audiobook, int)` to `lib/utils/formatters.dart` (or a new `chapter_math.dart`).
   2. Replace both copies; covered by D3 if folded together.
 
-### D5 — Replace `cast<T?>().firstWhere(orElse: () => null)` with `firstWhereOrNull`
+### D5 — Replace `cast<T?>().firstWhere(orElse: () => null)` with `firstWhereOrNull` ✅
 - **Location:** `library_screen.dart:517-520, 567-570`, `book_details_screen.dart:321-324`
 - **Rationale:** Idiomatic Dart since `package:collection`. Three sites.
 - **Priority:** P4
@@ -170,7 +170,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
 
 ## Performance / Hardening
 
-### H1 — Cache prefs reads in `audio_handler`
+### H1 — Cache prefs reads in `audio_handler` ✅
 - **Location:** `lib/services/audio_handler.dart:342-363` (`fastForward`/`rewind`), `:236-267` (`play()`)
 - **Rationale:** Every skip-button tap awaits `getSkipInterval()`/`getAutoRewind()` from SharedPreferences. Cheap, but adds latency to every gesture and creates a settings-vs-action race.
 - **Priority:** P3
