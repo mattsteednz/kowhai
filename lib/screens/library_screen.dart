@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show File, SocketException;
 import 'package:audio_service/audio_service.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import '../models/audiobook.dart';
 import '../services/audio_handler.dart';
@@ -327,6 +328,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   /// Called by the scanner as each book is found. Appends it to the visible
   /// list immediately so the user sees books appear one by one during a scan.
   void _onBookFound(Audiobook book) {
+    if (!mounted) return;
     _syncFoundPaths.add(book.path);
     _rawBooks ??= [];
     final idx = _rawBooks!.indexWhere((b) => b.path == book.path);
@@ -391,6 +393,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       _hasLocalFolder = path != null;
       _hasDriveConfigured = driveConfigured;
       if (path == null && driveBooks.isEmpty && !driveConfigured) {
+        if (!mounted) return;
         setState(() {
           _syncing = false;
         });
@@ -410,6 +413,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
       // Single DB read + full sort after all books are in.
       await _applySort();
+      if (!mounted) return;
       setState(() => _syncing = false);
 
       // Start background enrichment for books missing covers.
@@ -429,6 +433,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       }
     } catch (e, st) {
       debugPrint('[LibraryScreen] scan failed: $e\n$st');
+      if (!mounted) return;
       setState(() {
         _error = friendlyScanError(e);
         _syncing = false;
@@ -468,6 +473,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       }
     }
 
+    if (!mounted) return;
     setState(() {
       _books = sortBooks(
         all,
@@ -514,9 +520,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
     // Fallback: reload from DB (covers partial downloads or failed promote)
     if (updated == null) {
       final freshBooks = await driveLibService.loadDriveBooks();
-      updated = freshBooks.cast<Audiobook?>().firstWhere(
-        (b) => b?.driveMetadata?.folderId == folderId,
-        orElse: () => null,
+      updated = freshBooks.firstWhereOrNull(
+        (b) => b.driveMetadata?.folderId == folderId,
       );
     }
     if (updated == null) return;
@@ -564,9 +569,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
           files.every((f) => f.downloadState == DriveDownloadState.done);
       if (allDone) {
         await _refreshDriveBook(folderId);
-        final refreshed = _driveBooks.cast<Audiobook?>().firstWhere(
-          (b) => b?.driveMetadata?.folderId == folderId,
-          orElse: () => null,
+        final refreshed = _driveBooks.firstWhereOrNull(
+          (b) => b.driveMetadata?.folderId == folderId,
         );
         if (refreshed != null && refreshed.audioFiles.isNotEmpty) {
           book = refreshed;

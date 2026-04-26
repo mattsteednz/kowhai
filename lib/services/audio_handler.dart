@@ -23,6 +23,7 @@ class AudioVaultHandler extends BaseAudioHandler {
   late final DriveRemovalScheduler _driveRemoval;
   late final msb.MediaStateBroadcaster _broadcaster;
   DateTime? _lastPausedAt;
+  bool _autoRewind = true;
 
   AudioPlayer get player => _player;
   Audiobook? get currentBook => _book;
@@ -89,9 +90,9 @@ class AudioVaultHandler extends BaseAudioHandler {
       onStatusChanged: _onCastStatusChanged,
     );
 
-    locator<PreferencesService>().getSkipInterval().then((s) {
-      _broadcaster.skipInterval = s;
-    });
+    final prefs = locator<PreferencesService>();
+    prefs.getSkipInterval().then((s) => _broadcaster.skipInterval = s);
+    prefs.getAutoRewind().then((v) => _autoRewind = v);
 
     _player.playbackEventStream.listen(
       _broadcastState,
@@ -250,8 +251,7 @@ class AudioVaultHandler extends BaseAudioHandler {
       }
     }
 
-    final autoRewind = await locator<PreferencesService>().getAutoRewind();
-    if (autoRewind && _lastPausedAt != null) {
+    if (_autoRewind && _lastPausedAt != null) {
       final pausedDuration = DateTime.now().difference(_lastPausedAt!);
       final rewindAmount = getRewindOffset(pausedDuration);
       if (rewindAmount > Duration.zero) {
@@ -345,8 +345,7 @@ class AudioVaultHandler extends BaseAudioHandler {
 
   @override
   Future<void> fastForward() async {
-    final secs = await locator<PreferencesService>().getSkipInterval();
-    final interval = Duration(seconds: secs);
+    final interval = Duration(seconds: _broadcaster.skipInterval);
     if (isCasting) {
       await _cast.seekRelative(interval);
       return;
@@ -357,10 +356,9 @@ class AudioVaultHandler extends BaseAudioHandler {
 
   @override
   Future<void> rewind() async {
-    final secs = await locator<PreferencesService>().getSkipInterval();
-    final interval = Duration(seconds: secs);
+    final interval = Duration(seconds: _broadcaster.skipInterval);
     if (isCasting) {
-      await _cast.seekRelative(Duration(seconds: -secs));
+      await _cast.seekRelative(-interval);
       return;
     }
     await _player.seek(msb.clampedRewind(_player.position, interval));
@@ -391,6 +389,10 @@ class AudioVaultHandler extends BaseAudioHandler {
   void updateSkipInterval(int seconds) {
     _broadcaster.skipInterval = seconds;
     _broadcastState(null);
+  }
+
+  void updateAutoRewind(bool value) {
+    _autoRewind = value;
   }
 
   void _broadcastState(PlaybackEvent? event) {

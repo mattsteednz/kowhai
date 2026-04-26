@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
@@ -312,9 +313,8 @@ class _ActionButtonsState extends State<_ActionButtons> {
                 // fall back to DB-only load which at least provides audio paths.
                 final dbBooks =
                     await locator<DriveLibraryService>().loadDriveBooks();
-                final dbBook = dbBooks.cast<Audiobook?>().firstWhere(
-                  (b) => b?.driveMetadata?.folderId == folderId,
-                  orElse: () => null,
+                final dbBook = dbBooks.firstWhereOrNull(
+                  (b) => b.driveMetadata?.folderId == folderId,
                 );
                 if (dbBook != null && dbBook.audioFiles.isNotEmpty) {
                   bookToPlay = dbBook;

@@ -50,6 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     try {
       final hasPermission = await _ensureStoragePermission();
       if (!hasPermission) {
+        if (!mounted) return;
         setState(() {
           _error = 'Storage permission is required to read your audiobooks folder.';
           _loadingLocal = false;
@@ -60,6 +61,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         dialogTitle: 'Select your audiobooks folder',
       );
       if (result == null) {
+        if (!mounted) return;
         setState(() => _loadingLocal = false);
         return;
       }
@@ -72,6 +74,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Could not access folder: $e';
         _loadingLocal = false;
@@ -88,6 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final driveService = locator<DriveService>();
       final account = await driveService.signIn();
       if (account == null) {
+        if (!mounted) return;
         setState(() => _loadingDrive = false);
         return;
       }
@@ -95,6 +99,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (!mounted) return;
       final folder = await showDriveFolderPicker(context, driveService);
       if (folder == null) {
+        if (!mounted) return;
         setState(() => _loadingDrive = false);
         return;
       }
@@ -110,6 +115,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Could not connect to Google Drive: $e';
         _loadingDrive = false;
