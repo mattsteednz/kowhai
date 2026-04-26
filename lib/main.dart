@@ -9,6 +9,7 @@ import 'screens/library_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/audio_handler.dart';
 import 'services/drive_book_repository.dart';
+import 'services/drive_download_manager.dart';
 import 'services/drive_service.dart';
 import 'services/position_backup_service.dart';
 import 'services/position_service.dart';
@@ -132,6 +133,8 @@ class _AudioVaultAppState extends State<AudioVaultApp> {
     _lifecycleListener = AppLifecycleListener(
       onPause: () => unawaited(
           locator<PositionBackupService>().onAppBackground()),
+      onResume: () => unawaited(
+          locator<DriveDownloadManager>().resumeInterruptedDownloads()),
     );
   }
 
