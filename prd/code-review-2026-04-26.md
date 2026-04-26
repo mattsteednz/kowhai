@@ -51,7 +51,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   2. After current iteration completes, drain the pending queue.
   3. Add test: enqueue, then enqueue again before the first finishes, assert all books processed.
 
-### B6 — Cast stop reads pre-seek local position
+### B6 — Cast stop reads pre-seek local position ✅
 - **Location:** `lib/services/cast_controller.dart:207-209`
 - **Rationale:** After `localPlayer.seek(castPosition)`, the code immediately reads `localPlayer.position` and emits it to listeners. `seek` is async; the read may return the position before the seek lands, briefly showing a wrong position when transitioning cast → local.
 - **Priority:** P3
@@ -68,7 +68,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   2. Add `if (!mounted) return;` after each await.
   3. Consider a custom `safeSetState` extension on `State` to make the pattern obvious.
 
-### B8 — Null-bang on `driveMetadata!` with no guard
+### B8 — Null-bang on `driveMetadata!` with no guard ✅
 - **Location:** `lib/screens/book_details_screen.dart:181-191`
 - **Rationale:** `widget.book.driveMetadata!` in `initState`. If a book is constructed with `source == drive` but null metadata (boundary error in Drive sync paths), the screen NPEs before painting.
 - **Priority:** P3
@@ -89,7 +89,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   2. Delete the private copies, import the new widget in both files.
   3. Add a widget test (none currently exist for this).
 
-### D2 — Replace ad-hoc duration formatters with `fmtHM`
+### D2 — Replace ad-hoc duration formatters with `fmtHM` ✅
 - **Location:** `audiobook_list_tile.dart:145-150`, `book_details_screen.dart:148-153`, `player_screen.dart:323-329`, `mini_player.dart:166-171`
 - **Rationale:** Four near-identical helpers. `lib/utils/formatters.dart` already exports `fmtHM`. Pure cleanup.
 - **Priority:** P3
@@ -107,7 +107,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   2. Replace inline math with the helper.
   3. Test parity by snapshotting current outputs before/after.
 
-### D4 — Deduplicate `_chapterStartMs`
+### D4 — Deduplicate `_chapterStartMs` ✅
 - **Location:** `player_screen.dart` (`_BookmarksSheet`) and `book_details_screen.dart` (`_BookmarksSection._jumpTo`)
 - **Rationale:** Two private copies of the same chapter-start lookup.
 - **Priority:** P3
@@ -141,7 +141,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   1. Extract a generic `T? pickBestCover<T>(Iterable<T>, String Function(T) name)` to `lib/utils/cover_picker.dart`.
   2. Replace both call sites.
 
-### D8 — Single `StreamBuilder` in MiniPlayer
+### D8 — Single `StreamBuilder` in MiniPlayer ✅
 - **Location:** `lib/widgets/mini_player.dart:38, 108`
 - **Rationale:** Two nested StreamBuilders subscribe to the same `effectivePositionStream`, doubling rebuild cost (~5 fps becomes ~10 fps of work).
 - **Priority:** P3
@@ -149,7 +149,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   1. Hoist a single outer `StreamBuilder` whose builder passes `position` down.
   2. Verify with the Flutter inspector that rebuild count halves.
 
-### D9 — Delete unused `CacheManager`
+### D9 — Delete unused `CacheManager` ✅
 - **Location:** `lib/services/cache_manager.dart` and `test/services/cache_manager_test.dart`
 - **Rationale:** 220 lines of code never imported anywhere. Confirmed via grep. Carries a maintenance cost (compiled, linted, tested) for zero runtime value.
 - **Priority:** P2
@@ -170,7 +170,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
 
 ## Performance / Hardening
 
-### H1 — Cache prefs reads in `audio_handler` ✅
+### H1 — Cache prefs reads in `audio_handler` ✅ ✅
 - **Location:** `lib/services/audio_handler.dart:342-363` (`fastForward`/`rewind`), `:236-267` (`play()`)
 - **Rationale:** Every skip-button tap awaits `getSkipInterval()`/`getAutoRewind()` from SharedPreferences. Cheap, but adds latency to every gesture and creates a settings-vs-action race.
 - **Priority:** P3
