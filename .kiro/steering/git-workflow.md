@@ -16,15 +16,32 @@
 
 ## Merge Flow
 
-1. Push branch: `git push -u origin <branch>`
-2. Create PR with auto-merge enabled:
+1. **Rebase from main before pushing:**
+   ```bash
+   git checkout main && git pull origin main
+   git checkout <branch>
+   git rebase main
+   # Resolve any conflicts, then:
+   git push -u origin <branch> --force-with-lease
+   ```
+2. **Create PR with auto-merge:**
    ```bash
    gh pr create --title "..." --body "..." --base main
    gh pr merge <number> --auto --squash
    ```
-3. CI runs `flutter analyze --fatal-warnings` and `flutter test` automatically
-4. On green, GitHub squash-merges to `main` and deletes the branch automatically
-5. Pull main locally: `git checkout main && git pull origin main`
+3. **CI validates:** `flutter analyze --fatal-warnings` and `flutter test` run automatically
+4. **Auto-merge on green:** GitHub squash-merges to `main` and deletes the branch when CI passes
+5. **Pull main locally:**
+   ```bash
+   git checkout main && git pull origin main
+   ```
+
+## Rebase Strategy
+
+- **Always rebase from main before pushing** to avoid merge conflicts and keep history linear
+- Use `--force-with-lease` (not `--force`) when pushing after rebase to protect against accidental overwrites
+- If CI fails after rebase, fix locally, commit, and push again (no need to recreate PR)
+- For long-running branches, rebase from main frequently (daily or before each push) to minimize conflict resolution
 
 ## Bug Fix Routing
 
