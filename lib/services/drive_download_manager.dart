@@ -61,6 +61,22 @@ class DriveDownloadManager {
     _drain();
   }
 
+  /// Re-enqueues any book that has files in [DriveDownloadState.error] and is
+  /// not yet fully downloaded. Called on app resume to recover downloads that
+  /// were interrupted by background network suspension (iOS) or Android Doze.
+  Future<void> resumeInterruptedDownloads() async {
+    final books = await _repo.getAllDriveBooks();
+    for (final book in books) {
+      final files = await _repo.getFilesForBook(book.folderId);
+      if (files.isEmpty) continue;
+      final allDone = files.every((f) => f.downloadState == DriveDownloadState.done);
+      final hasError = files.any((f) => f.downloadState == DriveDownloadState.error);
+      if (!allDone && hasError) {
+        await enqueueAllFiles(book.folderId);
+      }
+    }
+  }
+
   /// Download all files for [folderId] — used for M4B (single file) and initial
   /// multi-file download where we want the whole book.
   Future<void> enqueueAllFiles(String folderId) async {

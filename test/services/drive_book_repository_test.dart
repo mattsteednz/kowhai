@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:audiovault/services/drive_book_repository.dart';
@@ -227,6 +229,32 @@ void main() {
       expect((await repo.getFilesForBook('F2')).length, 1);
     });
 
+    test('updateFileLocalPath updates only local_path, preserves state',
+        () async {
+      await repo.upsertDriveBook(_book('F1'));
+      await repo.upsertFile(_file('F1', 0,
+          state: DriveDownloadState.none, localPath: '/old/path.mp3'));
+
+      await repo.updateFileLocalPath('F1', 0, '/new/path.mp3');
+
+      final files = await repo.getFilesForBook('F1');
+      expect(files.first.localPath, '/new/path.mp3');
+      expect(files.first.downloadState, DriveDownloadState.none);
+    });
+
+    test('updateFileLocalPath does not affect other files', () async {
+      await repo.upsertDriveBook(_book('F1'));
+      await repo.upsertFile(
+          _file('F1', 0, state: DriveDownloadState.done, localPath: '/a.mp3'));
+      await repo.upsertFile(_file('F1', 1, localPath: '/b.mp3'));
+
+      await repo.updateFileLocalPath('F1', 1, '/b-new.mp3');
+
+      final files = await repo.getFilesForBook('F1');
+      expect(files.firstWhere((f) => f.fileIndex == 0).localPath, '/a.mp3');
+      expect(files.firstWhere((f) => f.fileIndex == 1).localPath, '/b-new.mp3');
+    });
+
     test('resetStaleDownloads resets missing-file rows to none', () async {
       await repo.upsertDriveBook(_book('F1'));
       // localPath points to a non-existent file.
@@ -238,6 +266,78 @@ void main() {
 
       final files = await repo.getFilesForBook('F1');
       expect(files.first.downloadState, DriveDownloadState.none);
+    });
+
+    test('resetStaleDownloads marks complete file as done', () async {
+      final tmpDir = await Directory.systemTemp.createTemp('avrepo_');
+      addTearDown(() => tmpDir.delete(recursive: true));
+
+      final tmpFile = File('${tmpDir.path}/track.mp3');
+      await tmpFile.writeAsBytes(List.filled(1024, 0)); // 1024 bytes
+
+      await repo.upsertDriveBook(_book('F2'));
+      await repo.upsertFile(DriveFileRecord(
+        folderId: 'F2',
+        fileIndex: 0,
+        fileId: 'f2-0',
+        fileName: 'track.mp3',
+        mimeType: 'audio/mpeg',
+        sizeBytes: 1024, // exact match
+        downloadState: DriveDownloadState.downloading,
+        localPath: tmpFile.path,
+      ));
+
+      await repo.resetStaleDownloads();
+
+      final files = await repo.getFilesForBook('F2');
+      expect(files.first.downloadState, DriveDownloadState.done,
+          reason: 'complete file should be promoted to done');
+      expect(tmpFile.existsSync(), isTrue,
+          reason: 'complete file must not be deleted');
+    });
+
+    test('resetStaleDownloads deletes partial file and resets to none',
+        () async {
+      final tmpDir = await Directory.systemTemp.createTemp('avrepo_');
+      addTearDown(() => tmpDir.delete(recursive: true));
+
+      final tmpFile = File('${tmpDir.path}/track.mp3');
+      await tmpFile.writeAsBytes(List.filled(512, 0)); // only half the bytes
+
+      await repo.upsertDriveBook(_book('F3'));
+      await repo.upsertFile(DriveFileRecord(
+        folderId: 'F3',
+        fileIndex: 0,
+        fileId: 'f3-0',
+        fileName: 'track.mp3',
+        mimeType: 'audio/mpeg',
+        sizeBytes: 1024, // expected 1 KB
+        downloadState: DriveDownloadState.downloading,
+        localPath: tmpFile.path,
+      ));
+
+      await repo.resetStaleDownloads();
+
+      final files = await repo.getFilesForBook('F3');
+      expect(files.first.downloadState, DriveDownloadState.none,
+          reason: 'partial file should reset to none');
+      expect(tmpFile.existsSync(), isFalse,
+          reason: 'partial file must be deleted');
+    });
+
+    test('resetStaleDownloads leaves non-downloading rows untouched', () async {
+      await repo.upsertDriveBook(_book('F4'));
+      await repo.upsertFile(
+          _file('F4', 0, state: DriveDownloadState.done, localPath: '/x'));
+      await repo.upsertFile(_file('F4', 1, state: DriveDownloadState.error));
+
+      await repo.resetStaleDownloads();
+
+      final files = await repo.getFilesForBook('F4');
+      expect(files.firstWhere((f) => f.fileIndex == 0).downloadState,
+          DriveDownloadState.done);
+      expect(files.firstWhere((f) => f.fileIndex == 1).downloadState,
+          DriveDownloadState.error);
     });
   });
 }

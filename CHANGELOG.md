@@ -2,6 +2,16 @@
 
 All notable changes to AudioVault are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- **Drive books no longer create folders in the library before download** — Discovered (but undownloaded) Drive books were immediately creating a folder inside the local Audiobooks directory containing only `cover.jpg`. Downloaded files are now staged in app storage and only moved to the library folder when the download is complete (`promoteToLocal`).
+- **Partial Drive files incorrectly marked as downloaded after process kill** — If Android killed the app mid-download, the incomplete file on disk caused `resetStaleDownloads` to mark it as fully downloaded on restart. It now compares actual file size against the expected size: exact match → done, otherwise the partial file is deleted and the record is reset so the download can start cleanly.
+- **Drive downloads not resuming after app returns to foreground** — On iOS (app suspension) and Android Doze, the 30-second chunk timeout would mark in-flight downloads as errored. The app now automatically re-enqueues any errored, not-yet-complete downloads when it returns to the foreground.
+
+---
+
 ## [1.6.4] — 2026-04-26
 
 ### Fixed

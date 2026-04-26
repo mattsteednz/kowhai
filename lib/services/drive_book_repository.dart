@@ -212,8 +212,26 @@ class DriveBookRepository {
     );
   }
 
-  /// Recovers stale 'downloading' state on startup.
-  /// If the local file exists, marks it as 'done'; otherwise resets to 'none'.
+  /// Updates only the local_path for a specific file, leaving download_state unchanged.
+  Future<void> updateFileLocalPath(
+      String folderId, int fileIndex, String localPath) async {
+    final db = await _db;
+    await db.update(
+      'drive_book_files',
+      {'local_path': localPath},
+      where: 'folder_id = ? AND file_index = ?',
+      whereArgs: [folderId, fileIndex],
+    );
+  }
+
+  /// Recovers stale 'downloading' state on startup (e.g. after process kill).
+  ///
+  /// A file is considered complete only when its size on disk matches the
+  /// expected size stored in the DB. A partial file (process killed mid-write)
+  /// is deleted and the record is reset to 'none' so the download can restart
+  /// cleanly. An exact size match marks the file as 'done' — this covers the
+  /// race where the download finished but the DB update was killed before it
+  /// could be written.
   Future<void> resetStaleDownloads() async {
     final db = await _db;
     final stale = await db.query(
@@ -222,10 +240,24 @@ class DriveBookRepository {
     );
     for (final row in stale) {
       final localPath = row['local_path'] as String?;
-      final exists = localPath != null && await File(localPath).exists();
+      final expectedSize = row['size_bytes'] as int? ?? 0;
+
+      bool isComplete = false;
+      if (localPath != null) {
+        final file = File(localPath);
+        if (await file.exists()) {
+          final actualSize = await file.length();
+          if (expectedSize > 0 && actualSize >= expectedSize) {
+            isComplete = true;
+          } else {
+            await file.delete(); // remove partial so next download starts fresh
+          }
+        }
+      }
+
       await db.update(
         'drive_book_files',
-        {'download_state': exists ? 'done' : 'none'},
+        {'download_state': isComplete ? 'done' : 'none'},
         where: 'folder_id = ? AND file_index = ?',
         whereArgs: [row['folder_id'], row['file_index']],
       );

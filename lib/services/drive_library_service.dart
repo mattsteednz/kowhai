@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/audiobook.dart';
@@ -24,10 +25,19 @@ class DriveLibraryService {
     this._scanner,
   );
 
-  /// Returns the local download directory for a Drive book.
+  /// Returns the staging directory for a Drive book — always in app storage.
+  /// All files are downloaded here first, before promoteToLocal() moves them
+  /// to the final library location.
+  @visibleForTesting
+  Future<String> stagingDir(String folderId) async {
+    final docs = await getApplicationDocumentsDirectory();
+    return '${docs.path}/drive_books/$folderId';
+  }
+
+  /// Returns the final local directory for a Drive book.
   /// If the user has a local library folder set, uses [folderName] within it
-  /// so the book becomes part of their regular library. Falls back to app
-  /// isolated storage when no library folder is set.
+  /// so the book becomes part of their regular library. Falls back to the
+  /// staging directory (app isolated storage) when no library folder is set.
   Future<String> bookDir(String folderId, {String? folderName}) async {
     if (folderName != null) {
       final localPath = await _prefs.getLibraryPath();
@@ -35,11 +45,10 @@ class DriveLibraryService {
         return '$localPath/$folderName';
       }
     }
-    final docs = await getApplicationDocumentsDirectory();
-    return '${docs.path}/drive_books/$folderId';
+    return stagingDir(folderId);
   }
 
-  /// Returns the download directories of all known Drive books.
+  /// Returns the final download directories of all known Drive books.
   /// Used by the scanner to exclude Drive-managed folders from local scan.
   Future<Set<String>> driveBookDirs() async {
     final books = await _repo.getAllDriveBooks();
@@ -63,7 +72,8 @@ class DriveLibraryService {
 
   /// Builds an [Audiobook] from a [DriveBookRecord] + its file records.
   Future<Audiobook> _buildAudiobook(DriveBookRecord record) async {
-    final dir = await bookDir(record.folderId, folderName: record.folderName);
+    final finalDir = await bookDir(record.folderId, folderName: record.folderName);
+    final staging = await stagingDir(record.folderId);
     final files = await _repo.getFilesForBook(record.folderId);
 
     // audioFiles only contains paths for downloaded files
@@ -72,18 +82,23 @@ class DriveLibraryService {
         .map((f) => f.localPath!)
         .toList();
 
-    // Cover: check if cover.jpg exists locally; kick off background download if not
+    // Cover: check final dir first (post-promotion), then staging.
+    // Background cover downloads target staging to avoid creating an empty
+    // folder in the library for books that haven't been downloaded yet.
     String? coverPath;
-    final coverFile = File('$dir/cover.jpg');
-    if (await coverFile.exists()) {
-      coverPath = coverFile.path;
-    } else if (record.coverFileId != null) {
-      // Fire-and-forget: download cover in the background
+    for (final checkDir in [finalDir, staging]) {
+      final coverFile = File('$checkDir/cover.jpg');
+      if (await coverFile.exists()) {
+        coverPath = coverFile.path;
+        break;
+      }
+    }
+    if (coverPath == null && record.coverFileId != null) {
       _downloadManager
           .downloadCover(
             folderId: record.folderId,
             coverFileId: record.coverFileId!,
-            destDir: dir,
+            destDir: staging,
           )
           .ignore();
     }
@@ -92,7 +107,7 @@ class DriveLibraryService {
 
     return Audiobook(
       title: record.folderName,
-      path: dir,
+      path: finalDir,
       audioFiles: audioFiles,
       source: AudiobookSource.drive,
       driveMetadata: DriveBookMeta(
@@ -122,8 +137,10 @@ class DriveLibraryService {
       final existing = await _repo.getDriveBook(scan.folder.id);
       if (existing != null) continue; // already tracked
 
-      final dir = await bookDir(scan.folder.id, folderName: scan.folder.name);
-      await Directory(dir).create(recursive: true);
+      // Stage new books in app storage. The directory is created lazily by
+      // _downloadFile when the first byte is written, so no folder appears in
+      // the library until promoteToLocal() moves the completed download.
+      final dir = await stagingDir(scan.folder.id);
 
       // Exclude dot files from Drive (hidden/system files)
       final audioFiles = scan.audioFiles
@@ -179,33 +196,64 @@ class DriveLibraryService {
     await _downloadManager.enqueueAllFiles(folderId);
   }
 
-  /// After a book is fully downloaded, re-scans its local directory via
-  /// ScannerService to get embedded chapters, author, durations, etc.
-  /// Returns the enriched Audiobook, or null if scan fails.
+  /// After a book is fully downloaded, moves its files from staging (app
+  /// storage) to the final library folder (if one is configured), then
+  /// re-scans the local directory via ScannerService to get embedded chapters,
+  /// author, durations, etc. Returns the enriched Audiobook, or null if the
+  /// scan fails.
   Future<Audiobook?> promoteToLocal(String folderId) async {
     final record = await _repo.getDriveBook(folderId);
     if (record == null) return null;
 
-    final dir = await bookDir(folderId, folderName: record.folderName);
+    final staging = await stagingDir(folderId);
+    final finalDir = await bookDir(folderId, folderName: record.folderName);
 
-    // Download cover if we have a cover file ID and don't have it yet
-    final coverPath = '$dir/cover.jpg';
+    // Move downloaded audio files to finalDir if they aren't already there.
+    // When staging == finalDir (no library folder configured) this is a no-op.
+    // Files already in finalDir (e.g. re-promotion or pre-fix downloads) are
+    // detected by the src == dest check and skipped.
+    if (staging != finalDir) {
+      await Directory(finalDir).create(recursive: true);
+      final files = await _repo.getFilesForBook(folderId);
+      for (final f in files) {
+        if (f.downloadState != DriveDownloadState.done || f.localPath == null) continue;
+        final destPath = '$finalDir/${f.fileName}';
+        if (f.localPath != destPath) {
+          final srcFile = File(f.localPath!);
+          if (await srcFile.exists()) {
+            await srcFile.copy(destPath);
+            await srcFile.delete();
+            await _repo.updateFileLocalPath(folderId, f.fileIndex, destPath);
+          }
+        }
+      }
+      // Move cover from staging to finalDir if it landed there.
+      final stagingCover = File('$staging/cover.jpg');
+      final finalCover = File('$finalDir/cover.jpg');
+      if (await stagingCover.exists() && !await finalCover.exists()) {
+        await stagingCover.copy(finalCover.path);
+        await stagingCover.delete();
+      }
+    }
+
+    // Download cover to finalDir if still missing
+    final coverPath = '$finalDir/cover.jpg';
     if (record.coverFileId != null && !await File(coverPath).exists()) {
       await _downloadManager.downloadCover(
         folderId: folderId,
         coverFileId: record.coverFileId!,
-        destDir: dir,
+        destDir: finalDir,
       );
     }
 
     // Re-scan the local directory
-    final scanned = await _scanner.scanSingleBook(dir);
+    final scanned = await _scanner.scanSingleBook(finalDir);
     if (scanned == null) return null;
 
     // Ensure cover is picked up even if scanner didn't find one
     String? finalCoverPath = scanned.coverImagePath;
     if (finalCoverPath == null) {
-      final coverFile = File('$dir/cover.jpg');
+      final coverFile = File('$finalDir/cover.jpg');
       if (await coverFile.exists()) finalCoverPath = coverFile.path;
     }
 
