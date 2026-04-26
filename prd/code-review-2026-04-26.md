@@ -80,7 +80,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
 
 ## DRY / Refactors
 
-### D1 — Extract `_EnrichmentAwareCover` to its own widget
+### D1 — Extract `_EnrichmentAwareCover` to its own widget ✅
 - **Location:** `lib/widgets/audiobook_card.dart:149-189`, `lib/widgets/audiobook_list_tile.dart:155-194`
 - **Rationale:** Verbatim duplicate. Any future cover-enrichment behavior change has to land in two files; one will inevitably be missed.
 - **Priority:** P2
@@ -98,7 +98,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   2. Replace call sites with `fmtHM(duration)`.
   3. If sign/format differs (e.g. negative durations), extend `fmtHM` rather than duplicating.
 
-### D3 — Consolidate chapter-start summation
+### D3 — Consolidate chapter-start summation ✅
 - **Location:** `mini_player.dart:52-57, 158-160`, `player_screen.dart:656-660` and `_BookmarksSheet:951-957`, `book_details_screen.dart:549-555`
 - **Rationale:** `position_persister.dart` already has `calculateGlobalPosition`. The same arithmetic exists in 5 widgets.
 - **Priority:** P3

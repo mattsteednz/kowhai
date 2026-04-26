@@ -540,12 +540,11 @@ class _BookmarksSectionState extends State<_BookmarksSection> {
     if (isM4b) {
       ah.seek(Duration(milliseconds: bookmark.positionMs));
     } else {
-      int startMs = 0;
-      for (int i = 0;
-          i < bookmark.chapterIndex && i < book.chapterDurations.length;
-          i++) {
-        startMs += book.chapterDurations[i].inMilliseconds;
-      }
+      final startMs = calculateGlobalPosition(
+        chapterIndex: bookmark.chapterIndex,
+        chapterPosition: Duration.zero,
+        chapterDurations: book.chapterDurations,
+      );
       ah.player.seek(
         Duration(milliseconds: bookmark.positionMs - startMs),
         index: bookmark.chapterIndex,

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import '../locator.dart';
 import '../models/audiobook.dart';
-import '../services/enrichment_service.dart';
-import 'book_cover.dart';
 import 'drive_download_overlay.dart';
+import 'enrichment_aware_cover.dart';
 
 class AudiobookCard extends StatelessWidget {
   final Audiobook book;
@@ -30,7 +28,7 @@ class AudiobookCard extends StatelessWidget {
     Widget coverStack = Stack(
       fit: StackFit.expand,
       children: [
-        _EnrichmentAwareCover(
+        EnrichmentAwareCover(
           book: book,
           iconSize: 52,
           placeholderIndex: placeholderIndex,
@@ -144,46 +142,3 @@ class AudiobookCard extends StatelessWidget {
   }
 }
 
-/// BookCover wrapper that reflects [EnrichmentService] state so the user can
-/// distinguish "fetching a cover right now" from "no cover available".
-class _EnrichmentAwareCover extends StatelessWidget {
-  final Audiobook book;
-  final double iconSize;
-  final int? placeholderIndex;
-
-  const _EnrichmentAwareCover({
-    required this.book,
-    required this.iconSize,
-    this.placeholderIndex,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // No enrichment happens for books that already have local cover data.
-    if (book.coverImageBytes != null || book.coverImagePath != null) {
-      return BookCover(
-        book: book,
-        iconSize: iconSize,
-        placeholderIndex: placeholderIndex,
-      );
-    }
-    final service = locator<EnrichmentService>();
-    return ValueListenableBuilder<Set<String>>(
-      valueListenable: service.enrichingPaths,
-      builder: (_, enriching, __) {
-        return ValueListenableBuilder<Set<String>>(
-          valueListenable: service.failedPaths,
-          builder: (_, failed, __) {
-            return BookCover(
-              book: book,
-              iconSize: iconSize,
-              isEnriching: enriching.contains(book.path),
-              enrichmentFailed: failed.contains(book.path),
-              placeholderIndex: placeholderIndex,
-            );
-          },
-        );
-      },
-    );
-  }
-}

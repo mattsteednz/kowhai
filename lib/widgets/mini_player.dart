@@ -40,11 +40,11 @@ class MiniPlayer extends StatelessWidget {
 
             // Global progress for the thin bar.
             final idx = ah.isCasting ? 0 : (ah.player.currentIndex ?? 0);
-            int offsetMs = 0;
-            for (int i = 0; i < idx && i < book.chapterDurations.length; i++) {
-              offsetMs += book.chapterDurations[i].inMilliseconds;
-            }
-            final globalMs = offsetMs + (position?.inMilliseconds ?? 0);
+            final globalMs = calculateGlobalPosition(
+              chapterIndex: idx,
+              chapterPosition: position ?? Duration.zero,
+              chapterDurations: book.chapterDurations,
+            );
 
             final remaining = _remaining(ah, book, position);
 
@@ -141,11 +141,11 @@ class MiniPlayer extends StatelessWidget {
     final totalMs = book.duration?.inMilliseconds;
     if (totalMs == null || totalMs == 0) return null;
     final idx = ah.isCasting ? 0 : (ah.player.currentIndex ?? 0);
-    int offsetMs = 0;
-    for (int i = 0; i < idx && i < book.chapterDurations.length; i++) {
-      offsetMs += book.chapterDurations[i].inMilliseconds;
-    }
-    final globalMs = offsetMs + (chapterPos?.inMilliseconds ?? 0);
+    final globalMs = calculateGlobalPosition(
+      chapterIndex: idx,
+      chapterPosition: chapterPos ?? Duration.zero,
+      chapterDurations: book.chapterDurations,
+    );
     final remainingMs = (totalMs - globalMs).clamp(0, totalMs);
     return Duration(milliseconds: remainingMs);
   }
