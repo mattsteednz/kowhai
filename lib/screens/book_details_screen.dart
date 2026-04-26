@@ -125,7 +125,7 @@ class _BookContent extends StatelessWidget {
         if (book.duration != null) ...[
           const SizedBox(height: 4),
           Text(
-            _formatDuration(book.duration!),
+            fmtHourMin(book.duration!),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
             ),
@@ -145,12 +145,6 @@ class _BookContent extends StatelessWidget {
     );
   }
 
-  String _formatDuration(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    if (h > 0) return '${h}h ${m}m';
-    return '${m}m';
-  }
 }
 
 class _ActionButtons extends StatefulWidget {

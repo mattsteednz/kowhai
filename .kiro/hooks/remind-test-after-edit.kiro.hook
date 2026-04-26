@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Remind: Run Tests After Edit",
+  "description": "After writing or editing a Dart/Flutter file, reminds the agent to run flutter test before committing.",
+  "version": "1",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": [
+      "write"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file was just written or edited. Remind yourself: run `flutter test` before committing. If you are about to commit, run the tests now and confirm they pass first."
+  }
+}
