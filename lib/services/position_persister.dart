@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../models/audiobook.dart';
+import '../utils/formatters.dart';
 import 'position_service.dart';
 
 /// A snapshot of where playback currently is — chapter index + offset
@@ -66,16 +67,3 @@ class PositionPersister {
   void dispose() => stopPeriodic();
 }
 
-/// Sums completed chapter durations + current chapter offset to produce a
-/// book-wide elapsed position in milliseconds. Pure.
-int calculateGlobalPosition({
-  required int chapterIndex,
-  required Duration chapterPosition,
-  required List<Duration> chapterDurations,
-}) {
-  int offset = 0;
-  for (int i = 0; i < chapterIndex && i < chapterDurations.length; i++) {
-    offset += chapterDurations[i].inMilliseconds;
-  }
-  return offset + chapterPosition.inMilliseconds;
-}

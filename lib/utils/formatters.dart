@@ -1,5 +1,19 @@
 // ── Pure helpers (testable) ───────────────────────────────────────────────────
 
+/// Sums completed chapter durations plus [chapterPosition] to produce a
+/// book-wide elapsed position in milliseconds.
+int calculateGlobalPosition({
+  required int chapterIndex,
+  required Duration chapterPosition,
+  required List<Duration> chapterDurations,
+}) {
+  int offset = 0;
+  for (int i = 0; i < chapterIndex && i < chapterDurations.length; i++) {
+    offset += chapterDurations[i].inMilliseconds;
+  }
+  return offset + chapterPosition.inMilliseconds;
+}
+
 /// Human-readable byte size string (B / KB / MB / GB).
 String formatBytes(int bytes) {
   if (bytes < 1024) return '$bytes B';

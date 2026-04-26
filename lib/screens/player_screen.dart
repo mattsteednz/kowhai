@@ -643,11 +643,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
               // duration via setAudioSources, so we compute chapter-relative
               // elapsed/remaining from chapterDurations + _currentChapterIndex.
               if (book.chapterDurations.isNotEmpty) {
-                int startMs = 0;
-                for (int i = 0; i < _currentChapterIndex; i++) {
-                  startMs += book.chapterDurations[i].inMilliseconds;
-                }
-                final chapStart = Duration(milliseconds: startMs);
+                final chapStart = Duration(
+                  milliseconds: calculateGlobalPosition(
+                    chapterIndex: _currentChapterIndex,
+                    chapterPosition: Duration.zero,
+                    chapterDurations: book.chapterDurations,
+                  ),
+                );
                 final chapDur = _currentChapterIndex < book.chapterDurations.length
                     ? book.chapterDurations[_currentChapterIndex]
                     : Duration.zero;
@@ -938,13 +940,12 @@ class _BookmarksSheetState extends State<_BookmarksSheet> {
   }
 
   /// Returns the global start position in ms of [chapterIndex] for multi-file books.
-  int _chapterStartMs(Audiobook book, int chapterIndex) {
-    int ms = 0;
-    for (int i = 0; i < chapterIndex && i < book.chapterDurations.length; i++) {
-      ms += book.chapterDurations[i].inMilliseconds;
-    }
-    return ms;
-  }
+  int _chapterStartMs(Audiobook book, int chapterIndex) =>
+      calculateGlobalPosition(
+        chapterIndex: chapterIndex,
+        chapterPosition: Duration.zero,
+        chapterDurations: book.chapterDurations,
+      );
 
   @override
   Widget build(BuildContext context) {
