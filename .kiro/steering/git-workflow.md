@@ -3,8 +3,9 @@
 - Default branch: `main`
 - Never commit new code directly to `main` — always create a branch first
 - Exception: rules, config, and documentation-only changes may be committed directly to `main`
+- **Always branch from `main`, never from another feature branch** — this prevents PR chaining and allows independent merges
 - Create a new branch for each feature or fix: `git checkout -b <type>/<short-description>`
-  - Types: `feature/`, `fix/`, `security/`, `chore/`
+  - Types: `feature/`, `fix/`, `security/`, `chore/`, `docs/`
   - For PRD-tracked features: `feature/prd-{number}-{description}` (e.g. `feature/prd-7-metadata-enrichment`)
 - Keep commits focused; write descriptive commit messages in the format `type(scope): short description`
   - Types: `feat`, `fix`, `security`, `chore`, `refactor`, `docs`, `test`
@@ -16,32 +17,46 @@
 
 ## Merge Flow
 
-1. **Rebase from main before pushing:**
+1. **Start new work from main:**
    ```bash
    git checkout main && git pull origin main
-   git checkout <branch>
-   git rebase main
+   git checkout -b <type>/<description>
+   ```
+
+2. **Before pushing, rebase from main:**
+   ```bash
+   git fetch origin
+   git rebase origin/main
    # Resolve any conflicts, then:
    git push -u origin <branch> --force-with-lease
    ```
-2. **Create PR with auto-merge:**
+
+3. **Create PR with auto-merge:**
    ```bash
    gh pr create --title "..." --body "..." --base main
    gh pr merge <number> --auto --squash
    ```
-3. **CI validates:** `flutter analyze --fatal-warnings` and `flutter test` run automatically
-4. **Auto-merge on green:** GitHub squash-merges to `main` and deletes the branch when CI passes
-5. **Pull main locally:**
+
+4. **CI validates:** `flutter analyze --fatal-warnings` and `flutter test` run automatically
+
+5. **Auto-merge on green:** GitHub squash-merges to `main` and deletes the branch when CI passes
+
+6. **Pull main locally:**
    ```bash
    git checkout main && git pull origin main
    ```
 
-## Rebase Strategy
+## Branch Strategy
 
-- **Always rebase from main before pushing** to avoid merge conflicts and keep history linear
-- Use `--force-with-lease` (not `--force`) when pushing after rebase to protect against accidental overwrites
-- If CI fails after rebase, fix locally, commit, and push again (no need to recreate PR)
-- For long-running branches, rebase from main frequently (daily or before each push) to minimize conflict resolution
+- **Always branch from main, never from another feature branch** — prevents PR chaining and allows all PRs to merge independently
+- Each PR is independent and can merge in any order without blocking others
+- If multiple PRs are in flight and main updates, rebase each one:
+  ```bash
+  git fetch origin
+  git rebase origin/main
+  git push --force-with-lease
+  ```
+- This keeps history linear and avoids merge conflicts between feature branches
 
 ## Bug Fix Routing
 
