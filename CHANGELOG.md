@@ -2,6 +2,16 @@
 
 All notable changes to AudioVault are documented here.
 
+## [1.6.3] — 2026-04-26
+
+### Fixed
+
+- **Drive book stuck in "undownloaded" state after download completes** — After a download finished, the book details screen would re-show the download prompt when tapping "Start listening" instead of opening the player. The details screen was reading file presence from the stale `Audiobook` object passed at navigation time rather than the live event-driven counts. It now uses download event counts (sourced from the DB via `DriveBookRepository`) to determine whether a book is fully downloaded, so the state always reflects reality.
+- **Stale audioFiles when navigating to player post-download** — When "Start listening" is tapped after a download completes on the details screen, the fresh book (with actual audio file paths) is now fetched from `DriveLibraryService` before opening the player, preventing the player from opening with an empty playlist.
+- **Silent failure swallowed in library refresh** — Errors thrown by `_refreshDriveBook` after a download event were silently dropped (unawaited fire-and-forget). Errors are now caught and logged, and `_applySort` is properly awaited so the library grid reliably updates when a download finishes.
+
+---
+
 ## [1.6.2] — 2026-04-25
 
 ### Fixed
