@@ -280,8 +280,16 @@ class _ActionButtonsState extends State<_ActionButtons> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDrive = widget.book.source == AudiobookSource.drive;
-    final downloaded = widget.book.audioFiles.length;
-    final total = widget.book.driveMetadata?.totalFileCount ?? 0;
+    // Prefer event-driven counts (set by _initDownloadState / _onEvent) over
+    // widget.book.audioFiles, which is stale when the book was opened before
+    // a download completed. Fall back to audioFiles only before _initDownloadState
+    // has run (_totalCount == 0) so non-Drive books and first frames still work.
+    final downloaded = isDrive && _totalCount > 0
+        ? _downloadedCount
+        : widget.book.audioFiles.length;
+    final total = isDrive && _totalCount > 0
+        ? _totalCount
+        : (widget.book.driveMetadata?.totalFileCount ?? 0);
     final fullyDownloaded = isDrive && total > 0 && downloaded >= total;
     final hasDownloaded = isDrive && (downloaded > 0 || _isDownloading);
     final notDownloaded = isDrive && !fullyDownloaded && !_isDownloading;
@@ -295,10 +303,19 @@ class _ActionButtonsState extends State<_ActionButtons> {
               await showDriveDownloadSheet(context, widget.book);
               return;
             }
+            // For Drive books that are fully downloaded, widget.book.audioFiles
+            // may be stale (empty) if the download completed while this screen
+            // was open. Re-fetch from the service to get the actual file paths.
+            var bookToPlay = widget.book;
+            if (isDrive && bookToPlay.audioFiles.isEmpty) {
+              final fresh = await locator<DriveLibraryService>()
+                  .promoteToLocal(bookToPlay.driveMetadata!.folderId);
+              if (fresh != null) bookToPlay = fresh;
+            }
+            if (!context.mounted) return;
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                  builder: (_) => PlayerScreen(book: widget.book)),
+              MaterialPageRoute(builder: (_) => PlayerScreen(book: bookToPlay)),
             );
           },
           icon: const Icon(Icons.play_arrow_rounded),

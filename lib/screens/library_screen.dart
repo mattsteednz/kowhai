@@ -494,7 +494,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (event.state == DriveDownloadState.done) {
       // Refresh on audio file done OR cover done (fileIndex == null) so
       // cover art appears as soon as it finishes downloading.
-      _refreshDriveBook(event.folderId);
+      _refreshDriveBook(event.folderId).catchError((Object e, StackTrace st) {
+        debugPrint('[LibraryScreen] _refreshDriveBook failed: $e\n$st');
+      });
     }
   }
 
@@ -525,7 +527,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     } else {
       _driveBooks = [..._driveBooks, updated];
     }
-    _applySort();
+    await _applySort();
   }
 
   Future<void> _openPlayer(BuildContext context, Audiobook book) async {
