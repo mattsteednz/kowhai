@@ -25,6 +25,7 @@ class EnrichmentService {
   Database? _db;
   bool _processing = false;
   bool _cancelled = false;
+  final _pendingBooks = <Audiobook>[];
 
   final _controller =
       StreamController<({String bookPath, String coverPath})>.broadcast();
@@ -119,30 +120,41 @@ class EnrichmentService {
   }
 
   /// Processes [books] in the background, fetching covers for those missing one.
+  ///
+  /// If called while a previous batch is still running, the new books are
+  /// queued and will be processed once the current batch completes.
   Future<void> enqueueBooks(List<Audiobook> books) async {
-    if (_processing) return;
+    if (_processing) {
+      _pendingBooks.addAll(books);
+      return;
+    }
     _processing = true;
     _cancelled = false;
     _client = http.Client(); // fresh client for each queue run
     try {
-      for (final book in books) {
-        if (_cancelled) break;
+      var toProcess = List<Audiobook>.of(books);
+      while (toProcess.isNotEmpty && !_cancelled) {
+        for (final book in toProcess) {
+          if (_cancelled) break;
 
-        // Skip if the book already has a local cover.
-        if (book.coverImagePath != null || book.coverImageBytes != null) {
-          continue;
+          // Skip if the book already has a local cover.
+          if (book.coverImagePath != null || book.coverImageBytes != null) {
+            continue;
+          }
+
+          final status = await getStatus(book.path);
+          if (status.enriched) continue;
+
+          // Don't retry more than once per day.
+          if (status.lastAttempted != null &&
+              DateTime.now().difference(status.lastAttempted!).inHours < 24) {
+            continue;
+          }
+
+          await _enrichBook(book);
         }
-
-        final status = await getStatus(book.path);
-        if (status.enriched) continue;
-
-        // Don't retry more than once per day.
-        if (status.lastAttempted != null &&
-            DateTime.now().difference(status.lastAttempted!).inHours < 24) {
-          continue;
-        }
-
-        await _enrichBook(book);
+        toProcess = List<Audiobook>.of(_pendingBooks);
+        _pendingBooks.clear();
       }
     } finally {
       _processing = false;
@@ -150,8 +162,10 @@ class EnrichmentService {
   }
 
   /// Stop any in-progress enrichment queue, aborting any in-flight HTTP request.
+  /// Also discards any books that were queued but not yet started.
   void cancel() {
     _cancelled = true;
+    _pendingBooks.clear();
     _client.close();
   }
 
