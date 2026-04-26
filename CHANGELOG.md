@@ -2,7 +2,7 @@
 
 All notable changes to AudioVault are documented here.
 
-## [Unreleased]
+## [1.6.5] — 2026-04-26
 
 ### Fixed
 
