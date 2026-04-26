@@ -366,9 +366,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   Future<void> _showAddBookmarkDialog(BuildContext context) async {
-    final position = _audioHandler.isCasting
-        ? _audioHandler.player.position
-        : _audioHandler.player.position;
+    final position = _audioHandler.effectivePosition;
     final chapterIndex = _currentChapterIndex;
 
     final nameCtrl = TextEditingController();

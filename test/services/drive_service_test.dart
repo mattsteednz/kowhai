@@ -92,6 +92,28 @@ void main() {
     });
   });
 
+  group('escapeQ', () {
+    test('plain names are unchanged', () {
+      expect(escapeQ('AudioVault'), 'AudioVault');
+    });
+
+    test('single quote is escaped', () {
+      expect(escapeQ("it's mine"), r"it\'s mine");
+    });
+
+    test('backslash is escaped', () {
+      expect(escapeQ(r'back\slash'), r'back\\slash');
+    });
+
+    test('both special chars escaped correctly', () {
+      expect(escapeQ(r"it\'s"), r"it\\\'s");
+    });
+
+    test('empty string returns empty string', () {
+      expect(escapeQ(''), '');
+    });
+  });
+
   group('naturalCompare', () {
     test('numeric segments sort numerically, not lexicographically', () {
       final names = ['track10.mp3', 'track2.mp3', 'track1.mp3'];

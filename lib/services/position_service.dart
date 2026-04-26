@@ -152,18 +152,15 @@ class PositionService {
 
   Future<void> setBookStatus(String bookPath, BookStatus status) async {
     final db = await _database;
-    await db.insert(
-      'positions',
-      {
-        'book_path': bookPath,
-        'chapter_index': 0,
-        'position_ms': 0,
-        'global_position_ms': 0,
-        'total_duration_ms': 0,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-        'status': status.name,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+    // INSERT with zero position for brand-new books; on conflict only update
+    // the status column so existing progress is never silently wiped.
+    await db.rawInsert(
+      'INSERT INTO positions '
+      '(book_path, chapter_index, position_ms, global_position_ms, total_duration_ms, updated_at, status) '
+      'VALUES (?, 0, 0, 0, 0, ?, ?) '
+      'ON CONFLICT(book_path) DO UPDATE SET '
+      'status=excluded.status, updated_at=excluded.updated_at',
+      [bookPath, DateTime.now().millisecondsSinceEpoch, status.name],
     );
   }
 

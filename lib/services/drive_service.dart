@@ -260,11 +260,11 @@ class DriveService {
     }
   }
 
-  /// Returns true if the write scope has already been granted.
+  /// Returns true if the write scope has already been granted, without prompting.
   Future<bool> hasWriteScope() async {
     if (_account == null) return false;
     try {
-      return await _signIn.requestScopes([_writeScope]);
+      return await _signIn.canAccessScopes([_writeScope]);
     } catch (_) {
       return false;
     }
@@ -278,7 +278,7 @@ class DriveService {
 
     // Check if it already exists.
     final resp = await api.files.list(
-      q: "'$parentId' in parents and name = '$name' and "
+      q: "'${escapeQ(parentId)}' in parents and name = '${escapeQ(name)}' and "
           "mimeType = 'application/vnd.google-apps.folder' and trashed = false",
       spaces: 'drive',
       $fields: 'files(id)',
@@ -307,7 +307,7 @@ class DriveService {
 
     // Check for existing file to update.
     final resp = await api.files.list(
-      q: "'$parentFolderId' in parents and name = '$fileName' and trashed = false",
+      q: "'${escapeQ(parentFolderId)}' in parents and name = '${escapeQ(fileName)}' and trashed = false",
       spaces: 'drive',
       $fields: 'files(id)',
     );
@@ -339,7 +339,7 @@ class DriveService {
     if (api == null) return null;
 
     final resp = await api.files.list(
-      q: "'$parentFolderId' in parents and name = '$fileName' and trashed = false",
+      q: "'${escapeQ(parentFolderId)}' in parents and name = '${escapeQ(fileName)}' and trashed = false",
       spaces: 'drive',
       $fields: 'files(id)',
     );
@@ -358,6 +358,13 @@ class DriveService {
     return bytes;
   }
 }
+
+/// Escapes a string for use inside single-quoted Drive API query literals.
+///
+/// Drive's `q` parameter uses single quotes for string values; a literal `'`
+/// or `\` inside a name would break the query or match unintended files.
+@visibleForTesting
+String escapeQ(String s) => s.replaceAll(r'\', r'\\').replaceAll("'", r"\'");
 
 /// Chooses the most likely cover image from a list of image files.
 ///

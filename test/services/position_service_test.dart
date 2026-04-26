@@ -219,6 +219,35 @@ void main() {
       });
     });
 
+    group('setBookStatus', () {
+      test('inserts with zero position for a new book', () async {
+        final svc = await _makeService();
+        await svc.setBookStatus('/books/new', BookStatus.inProgress);
+        expect(await svc.getBookStatus('/books/new'), BookStatus.inProgress);
+        final pos = await svc.getPosition('/books/new');
+        expect(pos?.chapterIndex, 0);
+        expect(pos?.position, Duration.zero);
+      });
+
+      test('does not wipe position when row already exists', () async {
+        final svc = await _makeService();
+        await svc.savePosition(
+          bookPath: '/books/dune',
+          chapterIndex: 5,
+          position: const Duration(minutes: 30),
+          globalPositionMs: 1800000,
+          totalDurationMs: 36000000,
+        );
+        await svc.setBookStatus('/books/dune', BookStatus.finished);
+        final pos = await svc.getPosition('/books/dune');
+        expect(pos!.chapterIndex, 5,
+            reason: 'setBookStatus must not zero chapter_index');
+        expect(pos.position, const Duration(minutes: 30),
+            reason: 'setBookStatus must not zero position_ms');
+        expect(await svc.getBookStatus('/books/dune'), BookStatus.finished);
+      });
+    });
+
     group('updateBookStatus', () {
       test('creates a row when none exists', () async {
         final svc = await _makeService();

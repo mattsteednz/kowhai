@@ -33,6 +33,10 @@ class AudioVaultHandler extends BaseAudioHandler {
   bool get isCasting => _cast.isCasting;
   Stream<bool> get castingStream => _cast.castingStream;
 
+  /// Snapshot of the current playback position, from Cast or local player.
+  Duration get effectivePosition =>
+      isCasting ? _cast.position : _player.position;
+
   /// Effective position stream — emits local or Cast position depending on mode.
   final _effectivePositionController = StreamController<Duration>.broadcast();
   Stream<Duration> get effectivePositionStream =>
