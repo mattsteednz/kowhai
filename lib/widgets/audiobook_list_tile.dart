@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../locator.dart';
 import '../models/audiobook.dart';
 import '../services/enrichment_service.dart';
+import '../utils/formatters.dart';
 import 'book_cover.dart';
 import 'drive_download_overlay.dart';
 
@@ -100,7 +101,7 @@ class AudiobookListTile extends StatelessWidget {
             ),
           if (book.duration != null)
             Text(
-              _formatDuration(book.duration!),
+              fmtHourMin(book.duration!),
               style: TextStyle(
                 fontSize: 12,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -142,12 +143,6 @@ class AudiobookListTile extends StatelessWidget {
     );
   }
 
-  String _formatDuration(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    if (h > 0) return '${h}h ${m}m';
-    return '${m}m';
-  }
 }
 
 /// BookCover wrapper that reflects [EnrichmentService] state so the user can

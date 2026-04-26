@@ -17,6 +17,15 @@ String fmtSpeed(double s) {
   return '${str.endsWith('0') ? s.toStringAsFixed(1) : str}×';
 }
 
+/// Formats a duration as `Xh Ym` (e.g. "2h 30m") or just `Ym` when under an hour.
+/// Negative durations are clamped to zero. Used in book cards and detail views.
+String fmtHourMin(Duration d) {
+  if (d < Duration.zero) d = Duration.zero;
+  final h = d.inHours;
+  final m = d.inMinutes.remainder(60);
+  return h > 0 ? '${h}h ${m}m' : '${m}m';
+}
+
 /// Formats a duration as `H:MM:SS` (if ≥ 1 hour) or `MM:SS`.
 /// Negative durations are clamped to zero.
 String fmtHM(Duration d) {

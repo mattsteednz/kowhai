@@ -320,14 +320,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  static String _fmtOverallRemaining(Duration d) {
-    if (d < Duration.zero) d = Duration.zero;
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    if (h > 0) return '${h}h ${m}m';
-    return '${m}m';
-  }
-
   String get _timerLabel {
     if (_sleepCtrl.stopAtChapterEnd.value) return 'End of ch.';
     final remaining = _sleepCtrl.remaining.value;
@@ -707,7 +699,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(
-                    '${_fmtOverallRemaining(book.duration! - displayedSec)} left',
+                    '${fmtHourMin(book.duration! - displayedSec)} left',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
