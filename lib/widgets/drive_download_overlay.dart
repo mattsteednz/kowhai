@@ -68,6 +68,11 @@ class _DriveDownloadOverlayState extends State<DriveDownloadOverlay> {
           .where((e) => e.folderId == widget.book.driveMetadata!.folderId)
           .listen(_onEvent);
       _initState();
+    } else if (oldWidget.book.audioFiles.length !=
+        widget.book.audioFiles.length) {
+      // Same book but audio file count changed (e.g. after undownload or
+      // promotion) — re-read DB so the overlay reflects the new state.
+      _initState();
     }
   }
 

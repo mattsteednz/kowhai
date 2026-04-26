@@ -308,9 +308,24 @@ class _ActionButtonsState extends State<_ActionButtons> {
             // was open. Re-fetch from the service to get the actual file paths.
             var bookToPlay = widget.book;
             if (isDrive && bookToPlay.audioFiles.isEmpty) {
-              final fresh = await locator<DriveLibraryService>()
-                  .promoteToLocal(bookToPlay.driveMetadata!.folderId);
-              if (fresh != null) bookToPlay = fresh;
+              final folderId = bookToPlay.driveMetadata!.folderId;
+              final fresh =
+                  await locator<DriveLibraryService>().promoteToLocal(folderId);
+              if (fresh != null) {
+                bookToPlay = fresh;
+              } else {
+                // promoteToLocal failed (e.g. scan error or path mismatch) —
+                // fall back to DB-only load which at least provides audio paths.
+                final dbBooks =
+                    await locator<DriveLibraryService>().loadDriveBooks();
+                final dbBook = dbBooks.cast<Audiobook?>().firstWhere(
+                  (b) => b?.driveMetadata?.folderId == folderId,
+                  orElse: () => null,
+                );
+                if (dbBook != null && dbBook.audioFiles.isNotEmpty) {
+                  bookToPlay = dbBook;
+                }
+              }
             }
             if (!context.mounted) return;
             Navigator.pushReplacement(

@@ -2,6 +2,15 @@
 
 All notable changes to AudioVault are documented here.
 
+## [1.6.4] — 2026-04-26
+
+### Fixed
+
+- **Library card shows stale download state after "Remove from device"** — After removing a downloaded Drive book from the device, the library grid card continued to show the "downloaded" cloud badge instead of the download icon. Tapping the card or manually refreshing would show the correct state. The `DriveDownloadOverlay` now re-reads download state from the database when the book's audio file count changes, so the correct undownloaded state is shown immediately.
+- **Defensive fallback when re-fetching book before playback** — If `promoteToLocal` fails (e.g. scanner cannot read the download directory), the details screen now falls back to loading the book from the database directly, ensuring audio file paths are always available before handing off to the player.
+
+---
+
 ## [1.6.3] — 2026-04-26
 
 ### Fixed
