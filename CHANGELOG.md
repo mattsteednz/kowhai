@@ -2,6 +2,26 @@
 
 All notable changes to AudioVault are documented here.
 
+## [1.6.6] — 2026-04-26
+
+### Fixed
+
+- **Bookmark while casting records correct position** — Adding a bookmark during a Cast session now captures the receiver's playback position instead of the local player's stale position.
+- **Drive sync toggle no longer prompts for OAuth twice** — Enabling Drive sync when write access was already granted previously triggered a second interactive consent dialog. The scope check is now non-interactive.
+- **Drive queries handle apostrophes and backslashes in names** — Folder or file names containing `'` or `\` (e.g. "It's a Wonderful Life") previously generated a malformed Drive API query and silently failed. Names are now correctly escaped.
+- **Marking a book's status no longer resets chapter position** — Calling `setBookStatus` on a book with saved progress overwrote the chapter index and position to zero. The update now only touches the status column, leaving progress intact.
+- **Cover art fetches for books found mid-scan** — If a second library scan completed while cover enrichment was already running, the newly found books were silently dropped and never enriched until the next app launch. They are now queued and processed after the current batch finishes.
+
+### Internal
+
+- Removed dead `CacheManager` service (was never wired into the app).
+- Centralised duration formatting into a shared `fmtHourMin` helper; removed four ad-hoc copies across cards, tiles, and screens.
+- Consolidated chapter-offset arithmetic into `calculateGlobalPosition`; removed five hand-rolled loops across `MiniPlayer`, `PlayerScreen`, and `BookDetailsScreen`.
+- Extracted `EnrichmentAwareCover` into a shared widget (`lib/widgets/enrichment_aware_cover.dart`); `AudiobookCard` and `AudiobookListTile` now use the single canonical implementation.
+- `MiniPlayer` now subscribes once to `effectivePositionStream` instead of twice, halving the ~5 Hz rebuild work.
+
+---
+
 ## [1.6.5] — 2026-04-26
 
 ### Fixed
