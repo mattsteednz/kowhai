@@ -3,6 +3,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:audiovault/models/audiobook.dart';
 import 'package:audiovault/services/position_persister.dart';
 import 'package:audiovault/services/position_service.dart';
+import 'package:audiovault/utils/formatters.dart';
 
 /// In-memory PositionService backed by the production schema (v3).
 Future<PositionService> _makeService() async {
