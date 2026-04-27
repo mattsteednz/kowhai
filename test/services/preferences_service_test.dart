@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audiovault/models/availability_filter_state.dart';
 import 'package:audiovault/services/preferences_service.dart';
 
 void main() {
@@ -82,6 +83,33 @@ void main() {
         await prefs.setSkipInterval(secs);
         expect(await prefs.getSkipInterval(), secs);
       }
+    });
+  });
+
+  group('PreferencesService — availability filter', () {
+    test('getAvailabilityFilter defaults to all when unset', () async {
+      expect(await prefs.getAvailabilityFilter(), AvailabilityFilterState.all);
+    });
+
+    test('getAvailabilityFilter defaults to all for unrecognised value', () async {
+      SharedPreferences.setMockInitialValues({'availability_filter': 'unknown_value'});
+      prefs = PreferencesService();
+      expect(await prefs.getAvailabilityFilter(), AvailabilityFilterState.all);
+    });
+
+    test('round-trip for all', () async {
+      await prefs.setAvailabilityFilter(AvailabilityFilterState.all);
+      expect(await prefs.getAvailabilityFilter(), AvailabilityFilterState.all);
+    });
+
+    test('round-trip for availableOffline', () async {
+      await prefs.setAvailabilityFilter(AvailabilityFilterState.availableOffline);
+      expect(await prefs.getAvailabilityFilter(), AvailabilityFilterState.availableOffline);
+    });
+
+    test('round-trip for driveOnly', () async {
+      await prefs.setAvailabilityFilter(AvailabilityFilterState.driveOnly);
+      expect(await prefs.getAvailabilityFilter(), AvailabilityFilterState.driveOnly);
     });
   });
 }

@@ -18,7 +18,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _loadingLocal = false;
   bool _loadingDrive = false;
-  bool _metadataEnrichment = true;
+  bool _metadataEnrichment = false;
   bool _driveAvailable = false;
   String? _error;
 

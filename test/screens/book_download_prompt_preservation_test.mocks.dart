@@ -7,6 +7,7 @@ import 'dart:async' as _i6;
 import 'dart:ui' as _i16;
 
 import 'package:audiovault/models/audiobook.dart' as _i8;
+import 'package:audiovault/models/availability_filter_state.dart' as _i17;
 import 'package:audiovault/models/bookmark.dart' as _i4;
 import 'package:audiovault/services/drive_book_repository.dart' as _i9;
 import 'package:audiovault/services/drive_download_manager.dart' as _i10;
@@ -1042,6 +1043,29 @@ class MockPreferencesService extends _i1.Mock
       (super.noSuchMethod(
         Invocation.method(
           #setMigrationDetectionCompleted,
+          [value],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<_i17.AvailabilityFilterState> getAvailabilityFilter() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getAvailabilityFilter,
+          [],
+        ),
+        returnValue: _i6.Future<_i17.AvailabilityFilterState>.value(
+            _i17.AvailabilityFilterState.all),
+      ) as _i6.Future<_i17.AvailabilityFilterState>);
+
+  @override
+  _i6.Future<void> setAvailabilityFilter(
+          _i17.AvailabilityFilterState? value) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #setAvailabilityFilter,
           [value],
         ),
         returnValue: _i6.Future<void>.value(),

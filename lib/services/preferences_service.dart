@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/availability_filter_state.dart';
+
 class PreferencesService {
   PreferencesService();
 
@@ -18,6 +20,7 @@ class PreferencesService {
   static const _driveProgressSyncKey = 'drive_progress_sync';
   static const _driveBackupFolderIdKey = 'drive_backup_folder_id';
   static const _driveBackupFolderNameKey = 'drive_backup_folder_name';
+  static const _availabilityFilterKey = 'availability_filter';
 
   SharedPreferences? _prefs;
 
@@ -154,5 +157,17 @@ class PreferencesService {
     final prefs = await _sp;
     await prefs.remove(_driveBackupFolderIdKey);
     await prefs.remove(_driveBackupFolderNameKey);
+  }
+
+  Future<AvailabilityFilterState> getAvailabilityFilter() async {
+    final name = (await _sp).getString(_availabilityFilterKey);
+    return AvailabilityFilterState.values.firstWhere(
+      (v) => v.name == name,
+      orElse: () => AvailabilityFilterState.all,
+    );
+  }
+
+  Future<void> setAvailabilityFilter(AvailabilityFilterState value) async {
+    await (await _sp).setString(_availabilityFilterKey, value.name);
   }
 }
