@@ -24,7 +24,7 @@ class TelemetryService {
         await FirebaseAnalytics.instance.logAppOpen();
       }
     } catch (e) {
-      debugPrint('[AudioVault:Telemetry] applyConsent error: $e');
+      debugPrint('[Kowhai:Telemetry] applyConsent error: $e');
     }
   }
 
@@ -40,7 +40,7 @@ class TelemetryService {
         parameters: parameters,
       );
     } catch (e) {
-      debugPrint('[AudioVault:Telemetry] logEvent error: $e');
+      debugPrint('[Kowhai:Telemetry] logEvent error: $e');
     }
   }
 
@@ -52,7 +52,7 @@ class TelemetryService {
     try {
       await FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
     } catch (e) {
-      debugPrint('[AudioVault:Telemetry] recordNonFatal error: $e');
+      debugPrint('[Kowhai:Telemetry] recordNonFatal error: $e');
     }
   }
 

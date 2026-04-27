@@ -1,4 +1,4 @@
-# AudioVault
+# Kōwhai Audiobook Player
 
 A Flutter audiobook player for Android and iOS with background playback, position persistence, and a clean Material 3 UI.
 
@@ -54,7 +54,7 @@ The app runs without telemetry if no valid config is present.
 
 ## Android Permissions
 
-AudioVault requests `MANAGE_EXTERNAL_STORAGE` on Android 11+ to browse the full file system for audiobooks.
+Kōwhai requests `MANAGE_EXTERNAL_STORAGE` on Android 11+ to browse the full file system for audiobooks.
 
 ## License
 

@@ -239,7 +239,7 @@ class LicensesScreen extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Text(
-                'AudioVault is built on the following open-source libraries. '
+                'Kōwhai is built on the following open-source libraries. '
                 'Tap any entry to read its licence.',
                 style: theme.textTheme.bodySmall?.copyWith(color: dimText),
               ),

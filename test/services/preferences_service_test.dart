@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:audiovault/models/availability_filter_state.dart';
-import 'package:audiovault/services/preferences_service.dart';
+import 'package:kowhai/models/availability_filter_state.dart';
+import 'package:kowhai/services/preferences_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

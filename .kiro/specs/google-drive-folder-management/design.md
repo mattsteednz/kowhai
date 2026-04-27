@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design addresses folder creation timing, metadata caching, and cleanup operations for Google Drive audiobooks in AudioVault. The current implementation creates folders prematurely during scanning (line 126 in `drive_library_service.dart`), stores all metadata in the SQLite database, and lacks cleanup mechanisms for stale or orphaned data.
+This design addresses folder creation timing, metadata caching, and cleanup operations for Google Drive audiobooks in Kōwhai. The current implementation creates folders prematurely during scanning (line 126 in `drive_library_service.dart`), stores all metadata in the SQLite database, and lacks cleanup mechanisms for stale or orphaned data.
 
 The enhanced system will:
 - Defer folder creation until download time

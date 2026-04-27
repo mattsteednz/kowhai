@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:audiovault/models/bookmark.dart';
-import 'package:audiovault/services/position_service.dart';
+import 'package:kowhai/models/bookmark.dart';
+import 'package:kowhai/services/position_service.dart';
 
 Future<PositionService> _makeService() async {
   final db = await databaseFactoryFfi.openDatabase(

@@ -19,7 +19,7 @@ class EnrichmentService {
       : _client = client ?? http.Client(),
         _db = db;
 
-  static void _log(String msg) => debugPrint('[AudioVault:Enrichment] $msg');
+  static void _log(String msg) => debugPrint('[Kowhai:Enrichment] $msg');
 
   http.Client _client;
   Database? _db;
@@ -70,7 +70,7 @@ class EnrichmentService {
   Future<Database> _openDb() async {
     final dir = await getApplicationDocumentsDirectory();
     return openDatabase(
-      '${dir.path}/audiovault_enrichment.db',
+      '${dir.path}/kowhai_enrichment.db',
       version: 1,
       onCreate: (db, _) => db.execute('''
         CREATE TABLE enrichment (

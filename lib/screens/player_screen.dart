@@ -65,7 +65,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   StreamSubscription<int?>? _chapterSub;
   StreamSubscription<Duration>? _posSub; // M4B: tracks chapter changes via position
 
-  late final AudioVaultHandler _audioHandler;
+  late final KowhaiHandler _audioHandler;
   bool _didInit = false;
 
   // Error-state tracking — mirrors handler.errorStream so we can disable
@@ -886,7 +886,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
 class _BookmarksSheet extends StatefulWidget {
   final Audiobook book;
-  final AudioVaultHandler audioHandler;
+  final KowhaiHandler audioHandler;
   final int currentChapterIndex;
   final VoidCallback onAddBookmark;
 

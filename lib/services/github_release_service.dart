@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 /// Fetches the latest release from the AudioVault GitHub repo.
 class GithubReleaseService {
   static const _owner = 'mattsteednz';
-  static const _repo = 'audiovault';
+  static const _repo = 'kowhai';
   static const _apiUrl =
       'https://api.github.com/repos/$_owner/$_repo/releases/latest';
 

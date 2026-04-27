@@ -8,7 +8,7 @@ import 'cast_server.dart';
 import 'position_persister.dart';
 import 'telemetry_service.dart';
 
-/// Owns all Google Cast state for AudioVaultHandler:
+/// Owns all Google Cast state for KowhaiHandler:
 ///
 /// * the local HTTP server that streams media bytes to the receiver
 /// * the Cast session / status / position subscriptions
@@ -83,7 +83,7 @@ class CastController {
         coverPath: book.coverImagePath,
       );
     } catch (e) {
-      debugPrint('[AudioVault:Cast] Failed to start server: $e');
+      debugPrint('[Kowhai:Cast] Failed to start server: $e');
       _casting = false;
       _castingController.add(false);
       if (wasPlaying) localPlayer.play();
@@ -167,7 +167,7 @@ class CastController {
         'file_count': book.audioFiles.length,
       });
     } catch (e) {
-      debugPrint('[AudioVault:Cast] Failed to load media on Cast: $e');
+      debugPrint('[Kowhai:Cast] Failed to load media on Cast: $e');
       _casting = false;
       _castingController.add(false);
       await _statusSub?.cancel();

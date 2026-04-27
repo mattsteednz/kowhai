@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/services/drive_service.dart';
-import 'package:audiovault/utils/cover_picker.dart';
-import 'package:audiovault/utils/natural_sort.dart';
+import 'package:kowhai/services/drive_service.dart';
+import 'package:kowhai/utils/cover_picker.dart';
+import 'package:kowhai/utils/natural_sort.dart';
 
 DriveFileInfo _img(String name) => DriveFileInfo(
       id: name,

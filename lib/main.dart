@@ -41,11 +41,11 @@ void main() async {
   await locator<DriveBookRepository>().resetStaleDownloads();
 
   // Initialise audio service.
-  final audioHandler = await AudioService.init<AudioVaultHandler>(
-    builder: AudioVaultHandler.new,
+  final audioHandler = await AudioService.init<KowhaiHandler>(
+    builder: KowhaiHandler.new,
     config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.mattsteed.audiovault.audio',
-      androidNotificationChannelName: 'AudioVault',
+      androidNotificationChannelId: 'com.mattsteed.kowhai.audio',
+      androidNotificationChannelName: 'Kōwhai',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
       fastForwardInterval: Duration(seconds: 30),
@@ -111,7 +111,7 @@ void main() async {
 }
 
 class AudioVaultApp extends StatefulWidget {
-  final AudioVaultHandler audioHandler;
+  final KowhaiHandler audioHandler;
   final ValueNotifier<ThemeMode> themeModeNotifier;
 
   const AudioVaultApp({

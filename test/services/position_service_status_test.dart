@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/services/position_service.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/services/position_service.dart';
 
 void main() {
   group('PositionService status derivation', () {

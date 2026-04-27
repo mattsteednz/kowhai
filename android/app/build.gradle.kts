@@ -18,7 +18,7 @@ if (keyPropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.mattsteed.audiovault"
+    namespace = "com.mattsteed.kowhai"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -38,7 +38,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.mattsteed.audiovault"
+        applicationId = "com.mattsteed.kowhai"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -55,7 +55,7 @@ android {
             val ksFile = if (!ciKeystorePath.isNullOrEmpty()) {
                 file(ciKeystorePath)
             } else {
-                file("C:/Users/Matt/.android/keys/audiovault-release.jks")
+                file("C:/Users/Matt/.android/keys/kowhai-release.jks")
             }
 
             if (ksFile.exists() && keyProperties.containsKey("storePassword")) {

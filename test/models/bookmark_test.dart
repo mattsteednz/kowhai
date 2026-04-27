@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/models/bookmark.dart';
+import 'package:kowhai/models/bookmark.dart';
 
 void main() {
   group('Bookmark', () {

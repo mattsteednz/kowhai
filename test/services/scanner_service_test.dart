@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/services/scanner_service.dart';
+import 'package:kowhai/services/scanner_service.dart';
 
 void main() {
   group('ScannerService', () {
@@ -9,7 +9,7 @@ void main() {
 
     setUp(() async {
       scannerService = ScannerService();
-      tempDir = await Directory.systemTemp.createTemp('audiovault_test_');
+      tempDir = await Directory.systemTemp.createTemp('kowhai_test_');
     });
 
     tearDown(() async {

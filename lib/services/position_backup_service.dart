@@ -21,7 +21,7 @@ import '../models/audiobook.dart';
 ///   while playing; fires immediately on app background.
 class PositionBackupService {
   static void _log(String msg) =>
-      debugPrint('[AudioVault:Backup] $msg');
+      debugPrint('[Kowhai:Backup] $msg');
 
   Timer? _exportTimer;
   Timer? _uploadTimer;
@@ -29,7 +29,7 @@ class PositionBackupService {
   static const _exportDebounce = Duration(seconds: 30);
   static const _uploadDebounce = Duration(minutes: 5);
   static const backupFileName = 'positions.json';
-  static const driveFolderName = 'AudioVault';
+  static const driveFolderName = 'Kowhai';
 
   // Keep private aliases for internal use.
   static const _backupFileName = backupFileName;

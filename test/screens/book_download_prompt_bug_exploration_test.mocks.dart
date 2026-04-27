@@ -5,12 +5,12 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i5;
 
-import 'package:audiovault/models/audiobook.dart' as _i7;
-import 'package:audiovault/models/bookmark.dart' as _i3;
-import 'package:audiovault/services/drive_book_repository.dart' as _i8;
-import 'package:audiovault/services/drive_download_manager.dart' as _i9;
-import 'package:audiovault/services/drive_library_service.dart' as _i4;
-import 'package:audiovault/services/position_service.dart' as _i10;
+import 'package:kowhai/models/audiobook.dart' as _i7;
+import 'package:kowhai/models/bookmark.dart' as _i3;
+import 'package:kowhai/services/drive_book_repository.dart' as _i8;
+import 'package:kowhai/services/drive_download_manager.dart' as _i9;
+import 'package:kowhai/services/drive_library_service.dart' as _i4;
+import 'package:kowhai/services/position_service.dart' as _i10;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i6;
 import 'package:sqflite/sqflite.dart' as _i2;

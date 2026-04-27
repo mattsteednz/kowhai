@@ -43,7 +43,7 @@ class ScannerService {
   /// author+series (`root/author/series/book`).
   static const int maxScanDepth = 3;
 
-  static void _log(String msg) => debugPrint('[AudioVault:Scanner] $msg');
+  static void _log(String msg) => debugPrint('[Kowhai:Scanner] $msg');
 
   Future<List<Audiobook>> scanFolder(String folderPath,
       {Set<String> excludePaths = const {},

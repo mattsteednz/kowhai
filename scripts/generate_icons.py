@@ -1,5 +1,5 @@
 """
-Generate AudioVault launcher icons from the VaultIcon SVG spec.
+Generate Kōwhai launcher icons from the VaultIcon SVG spec.
 
 SVG source (VaultIcon.tsx viewBox 0 0 48 48):
   <rect width="48" height="48" rx="12" fill="#6B4C9A"/>

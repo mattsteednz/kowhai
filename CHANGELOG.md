@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to AudioVault are documented here.
+All notable changes to Kōwhai Audiobook Player are documented here.
 
 ## [1.6.6] — 2026-04-26
 

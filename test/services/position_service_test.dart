@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/services/position_service.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/services/position_service.dart';
 
 /// Opens a fresh in-memory database with the positions schema.
 /// singleInstance: false ensures each call gets an isolated database.

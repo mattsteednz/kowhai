@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/widgets/book_cover.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/widgets/book_cover.dart';
 
 Audiobook _book() => Audiobook(
       title: 'Test Book',

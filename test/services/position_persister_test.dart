@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/services/position_persister.dart';
-import 'package:audiovault/services/position_service.dart';
-import 'package:audiovault/utils/formatters.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/services/position_persister.dart';
+import 'package:kowhai/services/position_service.dart';
+import 'package:kowhai/utils/formatters.dart';
 
 /// In-memory PositionService backed by the production schema (v3).
 Future<PositionService> _makeService() async {

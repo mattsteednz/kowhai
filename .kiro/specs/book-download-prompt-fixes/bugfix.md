@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Two related issues affect the book download/player flow in AudioVault:
+Two related issues affect the book download/player flow in Kōwhai:
 
 1. **Missing file size on WiFi** — The download prompt (`_showDriveDownloadSheet` in `library_screen.dart`) only fetches and displays the book's file size when the device is on mobile data. When on WiFi, the prompt shows a generic message with no size information, even though the size is equally useful context for the user.
 

@@ -5,14 +5,14 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/services/drive_book_repository.dart';
-import 'package:audiovault/services/drive_download_manager.dart';
-import 'package:audiovault/services/drive_library_service.dart';
-import 'package:audiovault/services/drive_service.dart';
-import 'package:audiovault/services/position_service.dart';
-import 'package:audiovault/services/preferences_service.dart';
-import 'package:audiovault/services/scanner_service.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/services/drive_book_repository.dart';
+import 'package:kowhai/services/drive_download_manager.dart';
+import 'package:kowhai/services/drive_library_service.dart';
+import 'package:kowhai/services/drive_service.dart';
+import 'package:kowhai/services/position_service.dart';
+import 'package:kowhai/services/preferences_service.dart';
+import 'package:kowhai/services/scanner_service.dart';
 
 // Stub scanner that skips actual file parsing — avoids Windows file-handle
 // retention that would prevent tearDown from deleting the temp directory.

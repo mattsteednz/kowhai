@@ -42,34 +42,34 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:rxdart/rxdart.dart';
 
-import 'package:audiovault/locator.dart';
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/models/availability_filter_state.dart';
-import 'package:audiovault/screens/book_details_screen.dart';
-import 'package:audiovault/screens/library_screen.dart';
-import 'package:audiovault/screens/player_screen.dart';
-import 'package:audiovault/services/drive_book_repository.dart';
-import 'package:audiovault/services/drive_download_manager.dart';
-import 'package:audiovault/services/drive_library_service.dart';
-import 'package:audiovault/services/drive_service.dart';
-import 'package:audiovault/services/enrichment_service.dart';
-import 'package:audiovault/services/position_service.dart';
-import 'package:audiovault/services/preferences_service.dart';
-import 'package:audiovault/services/scanner_service.dart';
-import 'package:audiovault/services/sleep_timer_controller.dart';
-import 'package:audiovault/services/audio_handler.dart';
-import 'package:audiovault/widgets/audio_handler_scope.dart';
+import 'package:kowhai/locator.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/models/availability_filter_state.dart';
+import 'package:kowhai/screens/book_details_screen.dart';
+import 'package:kowhai/screens/library_screen.dart';
+import 'package:kowhai/screens/player_screen.dart';
+import 'package:kowhai/services/drive_book_repository.dart';
+import 'package:kowhai/services/drive_download_manager.dart';
+import 'package:kowhai/services/drive_library_service.dart';
+import 'package:kowhai/services/drive_service.dart';
+import 'package:kowhai/services/enrichment_service.dart';
+import 'package:kowhai/services/position_service.dart';
+import 'package:kowhai/services/preferences_service.dart';
+import 'package:kowhai/services/scanner_service.dart';
+import 'package:kowhai/services/sleep_timer_controller.dart';
+import 'package:kowhai/services/audio_handler.dart';
+import 'package:kowhai/widgets/audio_handler_scope.dart';
 
 import 'book_download_prompt_preservation_test.mocks.dart';
 
 // ---------------------------------------------------------------------------
-// Minimal fake AudioVaultHandler for tests
+// Minimal fake KowhaiHandler for tests
 // ---------------------------------------------------------------------------
 
-/// A minimal fake [AudioVaultHandler] that provides the streams and state
+/// A minimal fake [KowhaiHandler] that provides the streams and state
 /// needed by [AudioHandlerScope]-dependent widgets without requiring a real
 /// audio player or service locator setup.
-class _FakeAudioHandler extends AudioVaultHandler {
+class _FakeAudioHandler extends KowhaiHandler {
   final _playbackStateSubject =
       BehaviorSubject<PlaybackState>.seeded(PlaybackState());
 
@@ -164,7 +164,7 @@ void main() {
     mockSleepTimerController = MockSleepTimerController();
 
     // ── Register mocks in the service locator FIRST ───────────────────────
-    // AudioVaultHandler constructor calls locator<PositionService>() and
+    // KowhaiHandler constructor calls locator<PositionService>() and
     // locator<PreferencesService>(), so these must be registered before
     // creating _FakeAudioHandler.
     locator.allowReassignment = true;
@@ -265,7 +265,7 @@ void main() {
         .thenReturn(ValueNotifier<bool>(false));
     when(mockSleepTimerController.isActive).thenReturn(false);
 
-    // ── AudioVaultHandler ─────────────────────────────────────────────────
+    // ── KowhaiHandler ─────────────────────────────────────────────────
     // Using _FakeAudioHandler (not a mock) to avoid BehaviorSubject/when
     // interaction issues. The fake provides the minimal streams needed by
     // AudioHandlerScope-dependent widgets.

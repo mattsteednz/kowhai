@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:audiovault/services/drive_book_repository.dart';
-import 'package:audiovault/services/position_service.dart';
+import 'package:kowhai/services/drive_book_repository.dart';
+import 'package:kowhai/services/position_service.dart';
 
 /// Opens a fresh in-memory DB matching the production schema (version 3).
 Future<({PositionService positionService, DriveBookRepository repo})>

@@ -1,7 +1,7 @@
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/services/drive_removal_scheduler.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/services/drive_removal_scheduler.dart';
 
 Audiobook _driveBook({
   String path = '/drive/book',

@@ -288,7 +288,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   StreamSubscription<({String bookPath, String coverPath})>? _enrichSub;
   StreamSubscription<DriveDownloadEvent>? _driveSub;
 
-  late final AudioVaultHandler _audioHandler;
+  late final KowhaiHandler _audioHandler;
   bool _didInit = false;
 
   @override
@@ -585,7 +585,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           title: const Text('DRM-Protected File'),
           content: const Text(
             'This audiobook is in Audible\'s AAX/AA format and is protected '
-            'by DRM (Digital Rights Management). AudioVault cannot play '
+            'by DRM (Digital Rights Management). Kōwhai cannot play '
             'DRM-protected files.\n\n'
             'To listen, use the Audible app, or convert the file to a '
             'DRM-free format using a tool that supports your local laws.',

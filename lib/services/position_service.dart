@@ -35,7 +35,7 @@ class PositionService {
   Future<Database> _openDb() async {
     final dir = await getApplicationDocumentsDirectory();
     return openDatabase(
-      '${dir.path}/audiovault_positions.db',
+      '${dir.path}/kowhai_positions.db',
       version: 4,
       onCreate: (db, _) async {
         await db.execute('''
