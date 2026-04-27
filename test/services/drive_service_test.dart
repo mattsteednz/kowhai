@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:audiovault/services/drive_service.dart';
+import 'package:audiovault/utils/cover_picker.dart';
+import 'package:audiovault/utils/natural_sort.dart';
 
 DriveFileInfo _img(String name) => DriveFileInfo(
       id: name,
@@ -57,37 +59,37 @@ void main() {
     });
   });
 
-  group('pickCover', () {
+  group('pickBestCover', () {
     test('returns null for empty list', () {
-      expect(pickCover([]), isNull);
+      expect(pickBestCover([], (f) => (f as DriveFileInfo).name), isNull);
     });
 
     test('prefers exact cover.jpg over everything else', () {
-      final result = pickCover([
+      final result = pickBestCover([
         _img('folder-art.jpg'),
         _img('cover.jpg'),
         _img('other-cover.png'),
-      ]);
+      ], (f) => f.name);
       expect(result?.name, 'cover.jpg');
     });
 
     test('is case-insensitive for exact match', () {
-      final result = pickCover([_img('other.jpg'), _img('COVER.JPG')]);
+      final result = pickBestCover([_img('other.jpg'), _img('COVER.JPG')], (f) => f.name);
       expect(result?.name, 'COVER.JPG');
     });
 
     test('accepts cover.jpeg and cover.png as exact matches', () {
-      expect(pickCover([_img('cover.jpeg')])?.name, 'cover.jpeg');
-      expect(pickCover([_img('cover.png')])?.name, 'cover.png');
+      expect(pickBestCover([_img('cover.jpeg')], (f) => f.name)?.name, 'cover.jpeg');
+      expect(pickBestCover([_img('cover.png')], (f) => f.name)?.name, 'cover.png');
     });
 
     test('falls back to name containing "cover"', () {
-      final result = pickCover([_img('folder.jpg'), _img('mycover2.jpg')]);
+      final result = pickBestCover([_img('folder.jpg'), _img('mycover2.jpg')], (f) => f.name);
       expect(result?.name, 'mycover2.jpg');
     });
 
     test('falls back to first image when no cover-like name', () {
-      final result = pickCover([_img('folder.jpg'), _img('art.jpg')]);
+      final result = pickBestCover([_img('folder.jpg'), _img('art.jpg')], (f) => f.name);
       expect(result?.name, 'folder.jpg');
     });
   });
