@@ -25,7 +25,7 @@ class ConsentScreen extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               Text(
-                'Help us improve AudioVault',
+                'Help us improve Kōwhai',
                 style: theme.textTheme.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,

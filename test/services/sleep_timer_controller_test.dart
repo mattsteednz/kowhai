@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/services/sleep_timer_controller.dart';
+import 'package:kowhai/services/sleep_timer_controller.dart';
 
 void main() {
   // sleepTimerTick is tested in player_helpers_test.dart — no duplicate here.

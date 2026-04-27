@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/services/opf_parser.dart';
-import 'package:audiovault/services/scanner_service.dart';
+import 'package:kowhai/services/opf_parser.dart';
+import 'package:kowhai/services/scanner_service.dart';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -139,7 +139,7 @@ void main() {
 
     setUp(() async {
       scanner = ScannerService();
-      tempDir = await Directory.systemTemp.createTemp('audiovault_opf_test_');
+      tempDir = await Directory.systemTemp.createTemp('kowhai_opf_test_');
     });
 
     tearDown(() async {

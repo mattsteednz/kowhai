@@ -1,4 +1,4 @@
-name: Build Release APK
+name: Build Release APK — Kōwhai
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
           channel: stable
 
       - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "${{ runner.temp }}/audiovault-release.jks"
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "${{ runner.temp }}/kowhai-release.jks"
 
       - name: Create key.properties
         run: |
@@ -43,7 +43,7 @@ jobs:
 
       - name: Build release APK
         env:
-          KEYSTORE_PATH: ${{ runner.temp }}/audiovault-release.jks
+          KEYSTORE_PATH: ${{ runner.temp }}/kowhai-release.jks
         run: flutter build apk --release
 
       - name: Extract version from tag
@@ -54,6 +54,6 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: AudioVault ${{ steps.version.outputs.tag }}
+          name: Kōwhai ${{ steps.version.outputs.tag }}
           generate_release_notes: true
           files: build/app/outputs/flutter-apk/app-release.apk

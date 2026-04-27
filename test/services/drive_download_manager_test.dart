@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:audiovault/services/drive_book_repository.dart';
-import 'package:audiovault/services/drive_download_manager.dart';
-import 'package:audiovault/services/drive_service.dart';
-import 'package:audiovault/services/position_service.dart';
+import 'package:kowhai/services/drive_book_repository.dart';
+import 'package:kowhai/services/drive_download_manager.dart';
+import 'package:kowhai/services/drive_service.dart';
+import 'package:kowhai/services/position_service.dart';
 
 Future<({PositionService positionService, DriveBookRepository repo})>
     _makeRepo() async {

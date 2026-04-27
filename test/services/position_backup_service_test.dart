@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:audiovault/services/position_backup_service.dart';
-import 'package:audiovault/services/position_service.dart';
-import 'package:audiovault/services/preferences_service.dart';
+import 'package:kowhai/services/position_backup_service.dart';
+import 'package:kowhai/services/position_service.dart';
+import 'package:kowhai/services/preferences_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

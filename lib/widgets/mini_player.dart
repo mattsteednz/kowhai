@@ -137,7 +137,7 @@ class MiniPlayer extends StatelessWidget {
   }
 
   Duration? _remaining(
-      AudioVaultHandler ah, Audiobook book, Duration? chapterPos) {
+      KowhaiHandler ah, Audiobook book, Duration? chapterPos) {
     final totalMs = book.duration?.inMilliseconds;
     if (totalMs == null || totalMs == 0) return null;
     final idx = ah.isCasting ? 0 : (ah.player.currentIndex ?? 0);

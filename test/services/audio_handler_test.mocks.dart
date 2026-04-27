@@ -5,9 +5,9 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-import 'package:audiovault/models/audiobook.dart' as _i5;
-import 'package:audiovault/services/position_service.dart' as _i3;
-import 'package:audiovault/services/preferences_service.dart' as _i6;
+import 'package:kowhai/models/audiobook.dart' as _i5;
+import 'package:kowhai/services/position_service.dart' as _i3;
+import 'package:kowhai/services/preferences_service.dart' as _i6;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:sqflite/sqflite.dart' as _i2;
 

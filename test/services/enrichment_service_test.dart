@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/services/enrichment_service.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/services/enrichment_service.dart';
 
 /// A fake [http.Client] whose [get] never completes until [close] is called,
 /// at which point it throws [ClientException] — matching real client behaviour.

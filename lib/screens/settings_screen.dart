@@ -275,7 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
-    // Try creating the AudioVault subfolder to verify write access.
+    // Try creating the Kōwhai subfolder to verify write access.
     try {
       final folderId = await driveService.findOrCreateFolder(
           folder.id, PositionBackupService.driveFolderName);
@@ -284,7 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         setState(() {
           _driveProgressSync = true;
-          _driveBackupFolderName = '${folder.name}/AudioVault';
+          _driveBackupFolderName = '${folder.name}/Kowhai';
         });
       }
     } catch (e) {
@@ -517,7 +517,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.shield_rounded),
             title: const Text('Analytics & crash reports'),
             subtitle: const Text(
-                'Send anonymous usage data to help improve AudioVault'),
+                'Send anonymous usage data to help improve Kōwhai'),
             trailing: Switch(
               value: _telemetryEnabled,
               onChanged: _setTelemetry,
@@ -542,7 +542,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ── About ─────────────────────────────────────────────────────────
           ListTile(
             leading: const Icon(Icons.info_outline_rounded),
-            title: const Text('About AudioVault'),
+            title: const Text('About Kōwhai'),
             subtitle: const Text('Version, licences, source code'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(

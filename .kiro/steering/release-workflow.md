@@ -42,15 +42,15 @@ Run when `main` is ready to ship publicly.
 6. Run `flutter analyze --fatal-warnings && flutter test` — fix any failures
 7. Commit: `git add pubspec.yaml CHANGELOG.md README.md && git commit -m "chore: bump to X.Y.Z, update CHANGELOG and README"` then `git push origin main`
 8. Build release APK: `flutter build apk --release`
-9. Rename APK: `cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/audiovault-X.Y.Z.apk`
+9. Rename APK: `cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/kowhai-X.Y.Z.apk`
 10. Create GitHub release:
     ```bash
     gh release create vX.Y.Z \
-      "build/app/outputs/flutter-apk/audiovault-X.Y.Z.apk#audiovault-X.Y.Z.apk" \
-      --title "AudioVault X.Y.Z" \
+      "build/app/outputs/flutter-apk/kowhai-X.Y.Z.apk#kowhai-X.Y.Z.apk" \
+      --title "Kōwhai X.Y.Z" \
       --notes "<notes from CHANGELOG entry>"
     ```
-    Add footer: `---\n[Full changelog](https://github.com/mattsteednz/audiovault/blob/main/CHANGELOG.md)`
+    Add footer: `---\n[Full changelog](https://github.com/mattsteednz/kowhai/blob/main/CHANGELOG.md)`
 
 ## Debug APK Deploy (`/publish-debug`)
 

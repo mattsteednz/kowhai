@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/services/enrichment_service.dart';
-import 'package:audiovault/widgets/audiobook_card.dart';
-import 'package:audiovault/widgets/audiobook_list_tile.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/services/enrichment_service.dart';
+import 'package:kowhai/widgets/audiobook_card.dart';
+import 'package:kowhai/widgets/audiobook_list_tile.dart';
 
 Audiobook _book({String title = 'A Very Long Audiobook Title That Might Wrap'}) =>
     Audiobook(

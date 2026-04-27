@@ -1,12 +1,12 @@
-# AudioVault — Project Overview
+# Kōwhai Audiobook Player — Project Overview
 
 Flutter audiobook player for Android and iOS.
 
-- Package: `com.mattsteed.audiovault`
-- Flutter package: `audiovault` (pubspec.yaml)
+- Package: `com.mattsteed.kowhai`
+- Flutter package: `kowhai` (pubspec.yaml)
 - Theme: Material 3 dark, seed color `0xFF6B4C9A`
 - Flutter SDK: `C:\Users\Matt\dev\flutter\bin` (not on PATH — invoke via full path or add to system PATH)
-- Git remote: `https://github.com/mattsteednz/audiovault`
+- Git remote: `https://github.com/mattsteednz/kowhai`
 
 ## Architecture
 
@@ -23,12 +23,12 @@ lib/
     player_screen.dart       # Full-screen player with chapter list
     settings_screen.dart     # Folder path + telemetry toggle
   services/
-    audio_handler.dart       # AudioVaultHandler extends BaseAudioHandler (audio_service)
+    audio_handler.dart       # KowhaiHandler extends BaseAudioHandler (audio_service)
     drive_service.dart       # Google Drive OAuth + file listing
     drive_library_service.dart    # Drive audiobook discovery
     drive_book_repository.dart    # Drive book metadata/caching
     drive_download_manager.dart   # Drive file download management
-    position_service.dart    # SQLite position persistence (audiovault_positions.db)
+    position_service.dart    # SQLite position persistence (kowhai_positions.db)
     preferences_service.dart # SharedPreferences wrapper
     scanner_service.dart     # Folder scanner + audio_metadata_reader
     telemetry_service.dart   # Firebase analytics/crashlytics guard
@@ -51,7 +51,7 @@ All Firebase calls go through `TelemetryService`. Firebase init is wrapped in tr
 `PositionService` is a singleton with lazy DB init. Schema stores `chapter_index`, `position_ms`, `global_position_ms`, `total_duration_ms`, `updated_at` (epoch ms). `getAllPositions()` returns rows ordered by `updated_at DESC` for last-played sort.
 
 ### Global position calculation
-`Audiobook.chapterDurations: List<Duration>` is populated by the scanner. `AudioVaultHandler._globalPositionMs()` sums durations of completed chapters + current chapter position.
+`Audiobook.chapterDurations: List<Duration>` is populated by the scanner. `KowhaiHandler._globalPositionMs()` sums durations of completed chapters + current chapter position.
 
 ### Library sort
 `_LibraryScreenState` keeps `_rawBooks` (scan order) and `_books` (sorted). `_applySort()` splits into played/unplayed, sorts played by `updated_at DESC` and unplayed alphabetically.
@@ -64,7 +64,7 @@ All Firebase calls go through `TelemetryService`. Firebase init is wrapped in tr
 - **`just_audio ^0.10.0`** — use `setAudioSources()` (not deprecated `ConcatenatingAudioSource`). Pass `initialPosition: saved?.position` (nullable); just_audio 0.10 handles M4B edit-list offsets natively
 - **`audio_service ^0.18.0`** — service class is `AudioService` (not `AudioServiceBackground`)
 - **`audio_metadata_reader ^1.4.2`** — use only `album` tag for book title, never `title` (which contains track/chapter name)
-- **`sqflite ^2.3.0`** — DB file is `audiovault_positions.db` in the app's documents directory
+- **`sqflite ^2.3.0`** — DB file is `kowhai_positions.db` in the app's documents directory
 
 ## Platform Notes
 
@@ -76,7 +76,7 @@ All Firebase calls go through `TelemetryService`. Firebase init is wrapped in tr
 
 ### iOS
 - `GoogleService-Info.plist` in `ios/Runner/` is a placeholder
-- Bundle ID: `com.mattsteed.audiovault`
+- Bundle ID: `com.mattsteed.kowhai`
 
 ## Common Commands
 

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/services/m4b_chapter_parser.dart';
+import 'package:kowhai/services/m4b_chapter_parser.dart';
 
 /// Builds a minimal MP4 box: 4-byte big-endian size + 4-byte type + [data].
 Uint8List _box(String type, Uint8List data) {

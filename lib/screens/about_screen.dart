@@ -68,7 +68,7 @@ class _AboutScreenState extends State<AboutScreen> {
         _isNewer(_installedVersion, _latestRelease!.version);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('About AudioVault')),
+      appBar: AppBar(title: const Text('About Kōwhai')),
       body: ListView(
         children: [
           // ── Identity block ────────────────────────────────────────────────
@@ -79,7 +79,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 _VaultIcon(size: 80),
                 const SizedBox(height: 16),
                 Text(
-                  'AudioVault',
+                  'Kōwhai',
                   style: theme.textTheme.headlineSmall
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
@@ -156,30 +156,30 @@ class _AboutScreenState extends State<AboutScreen> {
           // ── Links ─────────────────────────────────────────────────────────
           ListTile(
             leading: const Icon(Icons.language_rounded),
-            title: const Text('AudioVault website'),
-            subtitle: const Text('audiovault.mattsteed.com'),
+            title: const Text('Kōwhai website'),
+            subtitle: const Text('kowhai.mattsteed.com'),
             trailing: const Icon(Icons.open_in_new, size: 18),
-            onTap: () => _open('https://audiovault.mattsteed.com'),
+            onTap: () => _open('https://kowhai.mattsteed.com'),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           ),
           ListTile(
             leading: const Icon(Icons.shield_outlined),
             title: const Text('Privacy policy'),
-            subtitle: const Text('How AudioVault handles your data'),
+            subtitle: const Text('How Kōwhai handles your data'),
             trailing: const Icon(Icons.open_in_new, size: 18),
             onTap: () =>
-                _open('https://audiovault.mattsteed.com/privacy-policy/'),
+                _open('https://kowhai.mattsteed.com/privacy-policy/'),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           ),
           ListTile(
             leading: const Icon(Icons.code_rounded),
             title: const Text('Source code'),
-            subtitle: const Text('github.com/mattsteednz/audiovault'),
+            subtitle: const Text('github.com/mattsteednz/kowhai'),
             trailing: const Icon(Icons.open_in_new, size: 18),
             onTap: () =>
-                _open('https://github.com/mattsteednz/audiovault'),
+                _open('https://github.com/mattsteednz/kowhai'),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           ),
@@ -189,7 +189,7 @@ class _AboutScreenState extends State<AboutScreen> {
             subtitle: Text(
               _latestRelease != null
                   ? 'v${_latestRelease!.version} on GitHub'
-                  : 'github.com/mattsteednz/audiovault/releases',
+                  : 'github.com/mattsteednz/kowhai/releases',
             ),
             trailing: const Icon(Icons.open_in_new, size: 18),
             onTap: () => _open(

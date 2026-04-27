@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>AudioVault</string>
+	<string>Kōwhai</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>audiovault</string>
+	<string>kowhai</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -55,7 +55,7 @@
 	<string>Main</string>
 	<!-- Cast: local network access for device discovery -->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>AudioVault uses your local network to discover and connect to Cast devices.</string>
+	<string>Kōwhai uses your local network to discover and connect to Cast devices.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_googlecast._tcp</string>

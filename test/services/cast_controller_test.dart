@@ -1,7 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_chrome_cast/flutter_chrome_cast.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:audiovault/services/cast_controller.dart';
+import 'package:kowhai/services/cast_controller.dart';
 
 void main() {
   group('mapCastPlayerState', () {

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This feature addresses folder and cache management issues for Google Drive audiobooks in the AudioVault application. Currently, the system creates folders prematurely during scanning, stores metadata in incorrect locations, and fails to clean up stale or orphaned data. This enhancement ensures folders are created only when needed, metadata is cached appropriately, and cleanup operations maintain data consistency.
+This feature addresses folder and cache management issues for Google Drive audiobooks in the Kōwhai application. Currently, the system creates folders prematurely during scanning, stores metadata in incorrect locations, and fails to clean up stale or orphaned data. This enhancement ensures folders are created only when needed, metadata is cached appropriately, and cleanup operations maintain data consistency.
 
 ## Glossary
 

@@ -11,7 +11,7 @@ Future<void> showChapterListSheet({
   required BuildContext context,
   required Audiobook book,
   required int currentChapterIndex,
-  required AudioVaultHandler audioHandler,
+  required KowhaiHandler audioHandler,
 }) async {
   final isM4b = book.chapters.isNotEmpty;
   final chapCount = isM4b ? book.chapters.length : book.audioFiles.length;

@@ -15,7 +15,7 @@ import 'position_service.dart';
 import 'preferences_service.dart';
 import '../locator.dart';
 
-class AudioVaultHandler extends BaseAudioHandler {
+class KowhaiHandler extends BaseAudioHandler {
   final _player = AudioPlayer();
   Audiobook? _book;
   Uri? _artUri;
@@ -58,7 +58,7 @@ class AudioVaultHandler extends BaseAudioHandler {
   String? _lastError;
   String? get lastError => _lastError;
 
-  AudioVaultHandler() {
+  KowhaiHandler() {
     _persister = pp.PositionPersister(
       positionService: locator<PositionService>(),
       getBook: () => _book,
@@ -97,7 +97,7 @@ class AudioVaultHandler extends BaseAudioHandler {
     _player.playbackEventStream.listen(
       _broadcastState,
       onError: (Object e) {
-        debugPrint('[AudioVault:Error] playback error: $e');
+        debugPrint('[Kowhai:Error] playback error: $e');
         _reportError(_humanizePlayerError(e));
       },
     );
@@ -114,7 +114,7 @@ class AudioVaultHandler extends BaseAudioHandler {
         _broadcastState(null);
       },
       onError: (error, stackTrace) {
-        debugPrint('[AudioVault:Player] Index stream error: $error');
+        debugPrint('[Kowhai:Player] Index stream error: $error');
       },
     );
 

@@ -33,18 +33,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import 'package:audiovault/locator.dart';
-import 'package:audiovault/models/audiobook.dart';
-import 'package:audiovault/screens/book_details_screen.dart';
-import 'package:audiovault/screens/player_screen.dart';
-import 'package:audiovault/services/drive_book_repository.dart';
-import 'package:audiovault/services/drive_download_manager.dart';
-import 'package:audiovault/services/drive_library_service.dart';
-import 'package:audiovault/services/position_service.dart';
+import 'package:kowhai/locator.dart';
+import 'package:kowhai/models/audiobook.dart';
+import 'package:kowhai/screens/book_details_screen.dart';
+import 'package:kowhai/screens/player_screen.dart';
+import 'package:kowhai/services/drive_book_repository.dart';
+import 'package:kowhai/services/drive_download_manager.dart';
+import 'package:kowhai/services/drive_library_service.dart';
+import 'package:kowhai/services/position_service.dart';
 
 // NOTE: This import targets the future extracted utility file.
 // On unfixed code this file does not exist → compile error → confirms Bug A.
-import 'package:audiovault/utils/drive_download_sheet.dart';
+import 'package:kowhai/utils/drive_download_sheet.dart';
 
 import 'book_download_prompt_bug_exploration_test.mocks.dart';
 

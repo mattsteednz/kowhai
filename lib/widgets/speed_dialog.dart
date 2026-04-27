@@ -11,7 +11,7 @@ const _commonSpeeds = [0.75, 1.0, 1.25, 1.5, 2.0, 2.5];
 Future<double> showSpeedDialog({
   required BuildContext context,
   required double currentSpeed,
-  required AudioVaultHandler audioHandler,
+  required KowhaiHandler audioHandler,
 }) async {
   double tempSpeed = currentSpeed;
 

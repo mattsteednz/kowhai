@@ -11,7 +11,7 @@ import '../models/audiobook.dart';
 ///   • Nero `chpl` box (less common)
 ///   • QuickTime chapter track (iTunes / Audible)
 class M4bChapterParser {
-  static void _log(String msg) => debugPrint('[AudioVault:M4bParser] $msg');
+  static void _log(String msg) => debugPrint('[Kowhai:M4bParser] $msg');
 
   /// Entry point: tries Nero `chpl` first, then QuickTime chapter track.
   static Future<List<Chapter>> parseChapters(String filePath) async {
