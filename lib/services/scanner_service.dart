@@ -3,6 +3,8 @@ import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import '../models/audiobook.dart';
+import '../utils/cover_picker.dart';
+import '../utils/natural_sort.dart';
 import 'm4b_chapter_parser.dart';
 import 'opf_parser.dart';
 
@@ -395,39 +397,16 @@ class ScannerService {
   ///   2. Any image whose base name contains "cover" (case-insensitive)
   ///   3. First image found
   String? _pickBestCover(List<File> images) {
-    if (images.isEmpty) return null;
-    for (final file in images) {
-      final name = p.basename(file.path);
-      if (name == 'cover.jpg' || name == 'Cover.jpg') return file.path;
-    }
-    for (final file in images) {
-      if (p.basenameWithoutExtension(file.path).toLowerCase().contains('cover')) {
-        return file.path;
-      }
-    }
-    return images.first.path;
+    final best = pickBestCover(images, (f) => p.basename(f.path));
+    return best?.path;
   }
 
   /// Natural sort: compares strings by splitting into numeric and non-numeric
   /// segments so that "2.mp3" < "10.mp3" < "100.mp3".
   int _naturalSort(String a, String b) {
-    final nameA = p.basename(a).toLowerCase();
-    final nameB = p.basename(b).toLowerCase();
-    final re = RegExp(r'(\d+)|(\D+)');
-    final segA = re.allMatches(nameA).toList();
-    final segB = re.allMatches(nameB).toList();
-    final len = segA.length < segB.length ? segA.length : segB.length;
-    for (var i = 0; i < len; i++) {
-      final sa = segA[i].group(0)!;
-      final sb = segB[i].group(0)!;
-      final na = int.tryParse(sa);
-      final nb = int.tryParse(sb);
-      final cmp = (na != null && nb != null)
-          ? na.compareTo(nb)
-          : sa.compareTo(sb);
-      if (cmp != 0) return cmp;
-    }
-    return segA.length.compareTo(segB.length);
+    final nameA = p.basename(a);
+    final nameB = p.basename(b);
+    return naturalCompare(nameA, nameB);
   }
 
   // ── Chapter name detection ───────────────────────────────────────────────

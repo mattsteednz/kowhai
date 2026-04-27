@@ -3,6 +3,8 @@ import 'package:google_api_availability/google_api_availability.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
+import '../utils/cover_picker.dart';
+import '../utils/natural_sort.dart';
 
 /// A simple audio/image file extension check.
 const _audioExtensions = {'.mp3', '.m4a', '.aac', '.m4b', '.flac', '.ogg'};
@@ -186,7 +188,7 @@ class DriveService {
       pageToken = resp.nextPageToken;
     } while (pageToken != null);
 
-    folders.sort((a, b) => _naturalCompare(a.name, b.name));
+    folders.sort((a, b) => naturalCompare(a.name, b.name));
     return folders;
   }
 
@@ -219,7 +221,7 @@ class DriveService {
 
     // Filter to audio/image, natural sort audio files
     final audio = files.where((f) => f.isAudio).toList()
-      ..sort((a, b) => _naturalCompare(a.name, b.name));
+      ..sort((a, b) => naturalCompare(a.name, b.name));
     final images = files.where((f) => f.isImage).toList();
 
     return [...audio, ...images];
@@ -244,7 +246,9 @@ class DriveService {
     return scans;
   }
 
-  DriveFileInfo? _pickCover(List<DriveFileInfo> images) => pickCover(images);
+  DriveFileInfo? _pickCover(List<DriveFileInfo> images) {
+    return pickBestCover(images, (img) => img.name);
+  }
 
   // ── Write operations (requires driveFileScope) ─────────────────────────────────────
 
@@ -365,56 +369,3 @@ class DriveService {
 /// or `\` inside a name would break the query or match unintended files.
 @visibleForTesting
 String escapeQ(String s) => s.replaceAll(r'\', r'\\').replaceAll("'", r"\'");
-
-/// Chooses the most likely cover image from a list of image files.
-///
-/// Priority: exact `cover.jpg`/`.jpeg`/`.png`, then any filename containing
-/// `cover`, then the first image. Returns null if [images] is empty.
-DriveFileInfo? pickCover(List<DriveFileInfo> images) {
-  if (images.isEmpty) return null;
-  for (final img in images) {
-    final lower = img.name.toLowerCase();
-    if (lower == 'cover.jpg' || lower == 'cover.jpeg' || lower == 'cover.png') {
-      return img;
-    }
-  }
-  for (final img in images) {
-    if (img.name.toLowerCase().contains('cover')) return img;
-  }
-  return images.first;
-}
-
-/// Natural sort comparator — numbers within strings sort numerically.
-@visibleForTesting
-int naturalCompare(String a, String b) => _naturalCompare(a, b);
-
-int _naturalCompare(String a, String b) {
-  final aLow = a.toLowerCase();
-  final bLow = b.toLowerCase();
-  final aSegments = _splitNatural(aLow);
-  final bSegments = _splitNatural(bLow);
-  final len = aSegments.length < bSegments.length ? aSegments.length : bSegments.length;
-  for (int i = 0; i < len; i++) {
-    final aS = aSegments[i];
-    final bS = bSegments[i];
-    final aNum = int.tryParse(aS);
-    final bNum = int.tryParse(bS);
-    int cmp;
-    if (aNum != null && bNum != null) {
-      cmp = aNum.compareTo(bNum);
-    } else {
-      cmp = aS.compareTo(bS);
-    }
-    if (cmp != 0) return cmp;
-  }
-  return aSegments.length.compareTo(bSegments.length);
-}
-
-List<String> _splitNatural(String s) {
-  final segments = <String>[];
-  final re = RegExp(r'(\d+|\D+)');
-  for (final m in re.allMatches(s)) {
-    segments.add(m.group(0)!);
-  }
-  return segments;
-}
