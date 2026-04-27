@@ -124,7 +124,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   2. Import `package:collection/collection.dart`.
   3. Replace the pattern.
 
-### D6 — Share natural-sort algorithm
+### D6 — Share natural-sort algorithm ✅
 - **Location:** `scanner_service.dart:413-431` (`_naturalSort`), `drive_service.dart:384-413` (`_naturalCompare`)
 - **Rationale:** Same algorithm operating on different element types. Risk of divergence (sort orders differ between local and Drive views).
 - **Priority:** P3
@@ -133,7 +133,7 @@ Full-codebase service review. Items grouped by category, each with rationale, pr
   2. Both services call the shared comparator with a key extractor.
   3. Single test file covering numeric runs, leading zeros, locale.
 
-### D7 — Share cover-priority selection
+### D7 — Share cover-priority selection ✅
 - **Location:** `scanner_service.dart:397-409`, `drive_service.dart:366-378`
 - **Rationale:** Same priority list (`cover.jpg` > `cover.png` > first image > …) implemented twice.
 - **Priority:** P3
