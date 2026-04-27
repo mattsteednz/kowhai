@@ -44,12 +44,14 @@ import 'package:rxdart/rxdart.dart';
 
 import 'package:audiovault/locator.dart';
 import 'package:audiovault/models/audiobook.dart';
+import 'package:audiovault/models/availability_filter_state.dart';
 import 'package:audiovault/screens/book_details_screen.dart';
 import 'package:audiovault/screens/library_screen.dart';
 import 'package:audiovault/screens/player_screen.dart';
 import 'package:audiovault/services/drive_book_repository.dart';
 import 'package:audiovault/services/drive_download_manager.dart';
 import 'package:audiovault/services/drive_library_service.dart';
+import 'package:audiovault/services/drive_service.dart';
 import 'package:audiovault/services/enrichment_service.dart';
 import 'package:audiovault/services/position_service.dart';
 import 'package:audiovault/services/preferences_service.dart';
@@ -182,6 +184,10 @@ void main() {
         () => mockScannerService);
     locator.registerLazySingleton<SleepTimerController>(
         () => mockSleepTimerController);
+    // DriveService: register a real instance so currentAccount == null
+    // (Drive not connected), which causes _initLibrary to reset the
+    // availability filter to `all` — the correct state for these tests.
+    locator.registerLazySingleton<DriveService>(() => DriveService());
 
     // ── DriveDownloadManager ──────────────────────────────────────────────
     when(mockDriveDownloadManager.downloadEvents)
@@ -239,6 +245,8 @@ void main() {
         .thenAnswer((_) async => false);
     when(mockPreferencesService.getRefreshOnStartup())
         .thenAnswer((_) async => false);
+    when(mockPreferencesService.getAvailabilityFilter())
+        .thenAnswer((_) async => AvailabilityFilterState.all);
     when(mockPreferencesService.getSkipInterval())
         .thenAnswer((_) async => 30);
     when(mockPreferencesService.getAutoRewind())
@@ -307,6 +315,11 @@ void main() {
       () async {
         if (locator.isRegistered<SleepTimerController>()) {
           await locator.unregister<SleepTimerController>();
+        }
+      },
+      () async {
+        if (locator.isRegistered<DriveService>()) {
+          await locator.unregister<DriveService>();
         }
       },
     ]) {
