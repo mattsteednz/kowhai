@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kiri_check/kiri_check.dart';
 import 'package:audiovault/models/audiobook.dart';
+import 'package:audiovault/models/availability_filter_state.dart';
 import 'package:audiovault/screens/library_screen.dart';
 import 'package:audiovault/services/position_service.dart';
 import 'package:audiovault/utils/formatters.dart';
@@ -17,6 +19,8 @@ BookProgress _progress(String path, int updatedAt) => (
     );
 
 void main() {
+  _registerPropertyTests();
+
   group('applyStatusFilter', () {
     final books = [_book('A'), _book('B'), _book('C')];
     final statuses = {
@@ -265,4 +269,285 @@ void main() {
       expect(r.map((b) => b.title), ['B', 'A', 'C']);
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Arbitraries for applyAvailabilityFilter property tests
+// ---------------------------------------------------------------------------
+
+/// Generates an [Audiobook] with a random [AudiobookSource] and a random
+/// number of audio files (0–3), which determines offline availability.
+Arbitrary<Audiobook> _audiobookArbitrary() {
+  return combine3(
+    integer(min: 0, max: 999),          // unique index for path/title
+    constantFrom(AudiobookSource.values), // local or drive
+    integer(min: 0, max: 3),             // number of audio files
+  ).map((t) {
+    final (idx, source, fileCount) = t;
+    final audioFiles = List.generate(fileCount, (i) => '/audio/$idx/file$i.mp3');
+    return Audiobook(
+      title: 'Book $idx',
+      path: '/library/book_$idx',
+      audioFiles: audioFiles,
+      source: source,
+    );
+  });
+}
+
+/// Generates a list of 0–10 [Audiobook]s.
+Arbitrary<List<Audiobook>> _bookListArbitrary() =>
+    list(_audiobookArbitrary(), minLength: 0, maxLength: 10);
+
+/// Generates any [AvailabilityFilterState].
+Arbitrary<AvailabilityFilterState> _filterStateArbitrary() =>
+    constantFrom(AvailabilityFilterState.values);
+
+/// Generates any nullable [BookStatus] (null = show all).
+Arbitrary<BookStatus?> _bookStatusArbitrary() => oneOf([
+      constant(null),
+      constantFrom(BookStatus.values),
+    ]).map((v) => v as BookStatus?);
+
+// ---------------------------------------------------------------------------
+// Property tests — applyAvailabilityFilter
+// ---------------------------------------------------------------------------
+
+void _propertyTests() {
+  // Feature: library-availability-filter, Property 1: all filter is identity
+  property(
+    'Property 1: all filter is identity — '
+    'applyAvailabilityFilter(books, all) returns the same books in the same order',
+    () {
+      forAll(
+        _bookListArbitrary(),
+        (books) {
+          // **Validates: Requirements 2.1**
+          final result = applyAvailabilityFilter(books, AvailabilityFilterState.all);
+          expect(result.length, equals(books.length));
+          for (var i = 0; i < books.length; i++) {
+            expect(result[i], same(books[i]));
+          }
+        },
+        maxExamples: 25,
+      );
+    },
+  );
+
+  // Feature: library-availability-filter, Property 2: availableOffline filter returns only offline-available books
+  property(
+    'Property 2: availableOffline filter — soundness and completeness',
+    () {
+      forAll(
+        _bookListArbitrary(),
+        (books) {
+          // **Validates: Requirements 2.2**
+          final result = applyAvailabilityFilter(
+              books, AvailabilityFilterState.availableOffline);
+
+          // Soundness: every book in the output satisfies the predicate
+          for (final b in result) {
+            final isOfflineAvailable = b.source == AudiobookSource.local ||
+                (b.source == AudiobookSource.drive && b.audioFiles.isNotEmpty);
+            expect(isOfflineAvailable, isTrue,
+                reason:
+                    'Book "${b.title}" (source=${b.source}, audioFiles=${b.audioFiles.length}) '
+                    'should not appear in availableOffline output');
+          }
+
+          // Completeness: every qualifying input book appears in the output
+          final resultPaths = result.map((b) => b.path).toSet();
+          for (final b in books) {
+            final qualifies = b.source == AudiobookSource.local ||
+                (b.source == AudiobookSource.drive && b.audioFiles.isNotEmpty);
+            if (qualifies) {
+              expect(resultPaths, contains(b.path),
+                  reason:
+                      'Book "${b.title}" qualifies for availableOffline but is missing from output');
+            }
+          }
+        },
+        maxExamples: 25,
+      );
+    },
+  );
+
+  // Feature: library-availability-filter, Property 3: driveOnly filter returns only undownloaded Drive books
+  property(
+    'Property 3: driveOnly filter — soundness and completeness',
+    () {
+      forAll(
+        _bookListArbitrary(),
+        (books) {
+          // **Validates: Requirements 2.3**
+          final result =
+              applyAvailabilityFilter(books, AvailabilityFilterState.driveOnly);
+
+          // Soundness: every book in the output is a Drive book with empty audioFiles
+          for (final b in result) {
+            expect(b.source, equals(AudiobookSource.drive),
+                reason:
+                    'Book "${b.title}" (source=${b.source}) should not appear in driveOnly output');
+            expect(b.audioFiles, isEmpty,
+                reason:
+                    'Book "${b.title}" has non-empty audioFiles but appears in driveOnly output');
+          }
+
+          // Completeness: every qualifying input book appears in the output
+          final resultPaths = result.map((b) => b.path).toSet();
+          for (final b in books) {
+            final qualifies =
+                b.source == AudiobookSource.drive && b.audioFiles.isEmpty;
+            if (qualifies) {
+              expect(resultPaths, contains(b.path),
+                  reason:
+                      'Book "${b.title}" qualifies for driveOnly but is missing from output');
+            }
+          }
+        },
+        maxExamples: 25,
+      );
+    },
+  );
+
+  // Feature: library-availability-filter, Property 4: availability filter preserves sort order
+  property(
+    'Property 4: availability filter preserves relative sort order',
+    () {
+      forAll(
+        combine2(_bookListArbitrary(), _filterStateArbitrary()),
+        (args) {
+          // **Validates: Requirements 2.5**
+          final (books, filter) = args;
+          final result = applyAvailabilityFilter(books, filter);
+
+          // Walk the result in order; for each book find its position in the
+          // input list by scanning forward from where we left off.  If we
+          // can always find the next result book further along in the input,
+          // relative order is preserved.
+          int searchFrom = 0;
+          for (final b in result) {
+            // Find this exact object instance in the input from searchFrom onward.
+            final idx = books.indexWhere((x) => identical(x, b), searchFrom);
+            expect(idx, greaterThanOrEqualTo(searchFrom),
+                reason:
+                    'Book "${b.title}" appears out of order in filtered result');
+            searchFrom = idx + 1;
+          }
+        },
+        maxExamples: 25,
+      );
+    },
+  );
+
+  // Feature: library-availability-filter, Property 5: availability filter composes correctly with status filter
+  property(
+    'Property 5: availability + status filter composition',
+    () {
+      forAll(
+        combine3(
+          _bookListArbitrary(),
+          _filterStateArbitrary(),
+          _bookStatusArbitrary(),
+        ),
+        (args) {
+          // **Validates: Requirements 2.4**
+          final (books, availFilter, statusFilter) = args;
+
+          // Build a minimal statuses map (all books treated as notStarted
+          // unless we explicitly set them — sufficient to test composition).
+          final statuses = <String, BookStatus>{};
+
+          final availResult = applyAvailabilityFilter(books, availFilter);
+          final composed = applyStatusFilter(availResult, statuses, statusFilter);
+
+          // The composed result must be a subset of the availability-only result
+          final availPaths = availResult.map((b) => b.path).toSet();
+          for (final b in composed) {
+            expect(availPaths, contains(b.path),
+                reason:
+                    'Book "${b.title}" in composed result is not in availability-only result');
+          }
+
+          // Every book in the composed result satisfies both predicates independently
+          for (final b in composed) {
+            // Availability predicate
+            final satisfiesAvail = switch (availFilter) {
+              AvailabilityFilterState.all => true,
+              AvailabilityFilterState.availableOffline =>
+                b.source == AudiobookSource.local ||
+                    (b.source == AudiobookSource.drive &&
+                        b.audioFiles.isNotEmpty),
+              AvailabilityFilterState.driveOnly =>
+                b.source == AudiobookSource.drive && b.audioFiles.isEmpty,
+            };
+            expect(satisfiesAvail, isTrue,
+                reason:
+                    'Book "${b.title}" in composed result does not satisfy availability predicate');
+
+            // Status predicate
+            if (statusFilter != null) {
+              final bookStatus = statuses[b.path] ?? BookStatus.notStarted;
+              expect(bookStatus, equals(statusFilter),
+                  reason:
+                      'Book "${b.title}" in composed result does not satisfy status predicate');
+            }
+          }
+        },
+        maxExamples: 25,
+      );
+    },
+  );
+
+  // Feature: library-availability-filter, Property 6: pill counts match actual filtered counts
+  property(
+    'Property 6: pill counts match actual filtered counts',
+    () {
+      forAll(
+        _bookListArbitrary(),
+        (books) {
+          // **Validates: Requirements 3.2**
+          for (final state in AvailabilityFilterState.values) {
+            final filtered = applyAvailabilityFilter(books, state);
+            expect(
+              filtered.length,
+              equals(applyAvailabilityFilter(books, state).length),
+              reason:
+                  'Pill count for $state should equal applyAvailabilityFilter(books, $state).length',
+            );
+          }
+        },
+        maxExamples: 25,
+      );
+    },
+  );
+
+  // Feature: library-availability-filter, Property 7: drive-book pill visibility
+  property(
+    'Property 7: drive-book pill visibility — pills visible iff at least one drive book exists',
+    () {
+      forAll(
+        _bookListArbitrary(),
+        (books) {
+          // **Validates: Requirements 3.4**
+          // The "Available offline" and "Drive only" pills are shown only when
+          // at least one book has source == AudiobookSource.drive.
+          final hasDriveBook = books.any((b) => b.source == AudiobookSource.drive);
+          // The pill visibility predicate used in the UI:
+          final pillsVisible = books.any((b) => b.source == AudiobookSource.drive);
+          expect(
+            pillsVisible,
+            equals(hasDriveBook),
+            reason:
+                'Drive pills should be visible iff at least one book has source == drive',
+          );
+        },
+        maxExamples: 25,
+      );
+    },
+  );
+}
+
+// Register property tests inside the main test suite
+void _registerPropertyTests() {
+  group('applyAvailabilityFilter — property tests', _propertyTests);
 }

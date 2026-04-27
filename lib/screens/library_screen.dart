@@ -4,10 +4,12 @@ import 'package:audio_service/audio_service.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import '../models/audiobook.dart';
+import '../models/availability_filter_state.dart';
 import '../services/audio_handler.dart';
 import '../services/drive_book_repository.dart';
 import '../services/drive_download_manager.dart';
 import '../services/drive_library_service.dart';
+import '../services/drive_service.dart';
 import '../services/enrichment_service.dart';
 import '../services/position_service.dart';
 import '../services/preferences_service.dart';
@@ -67,6 +69,27 @@ List<Audiobook> applyStatusFilter(
   return books
       .where((b) => (statuses[b.path] ?? BookStatus.notStarted) == filter)
       .toList();
+}
+
+/// Filters [books] by availability.
+///
+/// - [all]             → returns [books] unchanged.
+/// - [availableOffline] → local books + Drive books with non-empty audioFiles.
+/// - [driveOnly]       → Drive books with empty audioFiles only.
+List<Audiobook> applyAvailabilityFilter(
+  List<Audiobook> books,
+  AvailabilityFilterState filter,
+) {
+  return switch (filter) {
+    AvailabilityFilterState.all => books,
+    AvailabilityFilterState.availableOffline => books.where((b) =>
+        b.source == AudiobookSource.local ||
+        (b.source == AudiobookSource.drive && b.audioFiles.isNotEmpty),
+      ).toList(),
+    AvailabilityFilterState.driveOnly => books.where((b) =>
+        b.source == AudiobookSource.drive && b.audioFiles.isEmpty,
+      ).toList(),
+  };
 }
 
 /// Sorts [books] by last-played order: books with a position entry come first
@@ -252,6 +275,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
   // Status filter pill selection (null = show all).
   BookStatus? _statusFilter;
 
+  // Availability filter selection.
+  AvailabilityFilterState _availabilityFilter = AvailabilityFilterState.all;
+
   // User-selected sort order. Defaults to last-played until prefs load.
   LibrarySortOrder _sortOrder = LibrarySortOrder.lastPlayed;
 
@@ -306,8 +332,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   List<Audiobook> get _displayedBooks {
-    final filtered = filterBooks(_books ?? [], _searchQuery);
-    return applyStatusFilter(filtered, _statuses, _statusFilter);
+    // Pipeline: availability → search → status
+    final availFiltered = applyAvailabilityFilter(_books ?? [], _availabilityFilter);
+    final searchFiltered = filterBooks(availFiltered, _searchQuery);
+    return applyStatusFilter(searchFiltered, _statuses, _statusFilter);
   }
 
   // ── Scan + sort ─────────────────────────────────────────────────────────────
@@ -315,8 +343,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _initLibrary() async {
     final prefs = locator<PreferencesService>();
     final sortName = await prefs.getLibrarySort();
+    final availFilter = await prefs.getAvailabilityFilter();
+    final driveConnected = locator<DriveService>().currentAccount != null;
     if (mounted) {
-      setState(() => _sortOrder = LibrarySortOrder.fromName(sortName));
+      setState(() {
+        _sortOrder = LibrarySortOrder.fromName(sortName);
+        // Reset to `all` if Drive is not connected — the filter is meaningless
+        // without a Drive account and the section won't be shown in the UI.
+        _availabilityFilter = driveConnected ? availFilter : AvailabilityFilterState.all;
+      });
     }
     final shouldScan = widget.initialSyncDrive || await prefs.getRefreshOnStartup();
     // Always load previously discovered books so the library isn't empty on
@@ -532,6 +567,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     } else {
       _driveBooks = [..._driveBooks, updated];
     }
+    // _applySort() rebuilds _books from _rawBooks + _driveBooks and calls
+    // setState, which causes _displayedBooks to recompute via
+    // applyAvailabilityFilter → filterBooks → applyStatusFilter.
+    // This means a newly-downloaded Drive book automatically disappears from
+    // the `driveOnly` view and appears in the `availableOffline` view without
+    // any manual rescan (Requirements 2.6, 2.7).
     await _applySort();
   }
 
@@ -812,10 +853,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final hasStatus = _statusFilter != null;
+    final hasAvailability = _availabilityFilter != AvailabilityFilterState.all;
     final hasSort = _sortOrder != LibrarySortOrder.lastPlayed;
 
     final summaryParts = <String>[];
     if (hasStatus) summaryParts.add(_statusFilterLabel(_statusFilter!));
+    if (hasAvailability) summaryParts.add(_availabilityFilter.label);
     if (hasSort) summaryParts.add(_sortOrder.label);
     final summary = summaryParts.isEmpty
         ? null
@@ -863,7 +906,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
           _viewBarButton(
             icon: Icons.tune_rounded,
-            active: hasStatus,
+            active: hasStatus || hasAvailability,
             tooltip: 'Filter',
             onPressed: _openFilterSheet,
           ),
@@ -913,6 +956,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
       statusCounts[s] = applyStatusFilter(searchFiltered, _statuses, s).length;
     }
 
+    // Availability pill counts (based on same search-filtered base).
+    final availCounts = <AvailabilityFilterState, int>{};
+    for (final s in AvailabilityFilterState.values) {
+      availCounts[s] = applyAvailabilityFilter(searchFiltered, s).length;
+    }
+
+    final driveConnected = locator<DriveService>().currentAccount != null;
+    final hasDriveBooks = _driveBooks.isNotEmpty;
+
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -920,80 +972,148 @@ class _LibraryScreenState extends State<LibraryScreen> {
         builder: (sheetCtx, setSheetState) {
           final theme = Theme.of(sheetCtx);
           final maxHeight = MediaQuery.of(sheetCtx).size.height * 0.75;
+
+          // Whether "Clear all" should be enabled.
+          final canClear = _statusFilter != null ||
+              _availabilityFilter != AvailabilityFilterState.all;
+
           return SafeArea(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxHeight: maxHeight),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(2),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.outlineVariant,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('Filter', style: theme.textTheme.titleMedium),
-                        const SizedBox(height: 16),
-                        Text(
-                          'PROGRESS',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            letterSpacing: 1.2,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _pill(
-                              label: 'All ($allCount)',
-                              selected: _statusFilter == null,
-                              onTap: () {
-                                setState(() => _statusFilter = null);
-                                setSheetState(() {});
-                              },
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Filter', style: theme.textTheme.titleMedium),
+                          const SizedBox(height: 16),
+                          Text(
+                            'PROGRESS',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              letterSpacing: 1.2,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
-                            for (final s in BookStatus.values)
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
                               _pill(
-                                label: '${_statusFilterLabel(s)} (${statusCounts[s] ?? 0})',
-                                selected: _statusFilter == s,
+                                label: 'All ($allCount)',
+                                selected: _statusFilter == null,
                                 onTap: () {
-                                  setState(() => _statusFilter = s);
-                                  setSheetState(() {});
-                                },
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        TextButton.icon(
-                          icon: const Icon(Icons.filter_alt_off_rounded),
-                          label: const Text('Clear all'),
-                          onPressed: _statusFilter == null
-                              ? null
-                              : () {
                                   setState(() => _statusFilter = null);
                                   setSheetState(() {});
                                 },
-                        ),
-                      ],
+                              ),
+                              for (final s in BookStatus.values)
+                                _pill(
+                                  label: '${_statusFilterLabel(s)} (${statusCounts[s] ?? 0})',
+                                  selected: _statusFilter == s,
+                                  onTap: () {
+                                    setState(() => _statusFilter = s);
+                                    setSheetState(() {});
+                                  },
+                                ),
+                            ],
+                          ),
+                          // ── AVAILABILITY section (Drive-connected only) ──
+                          if (driveConnected) ...[
+                            const SizedBox(height: 20),
+                            Text(
+                              'AVAILABILITY',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                letterSpacing: 1.2,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _pill(
+                                  label: 'All (${availCounts[AvailabilityFilterState.all] ?? 0})',
+                                  selected: _availabilityFilter == AvailabilityFilterState.all,
+                                  onTap: () {
+                                    setState(() {
+                                      _availabilityFilter = AvailabilityFilterState.all;
+                                    });
+                                    locator<PreferencesService>()
+                                        .setAvailabilityFilter(AvailabilityFilterState.all);
+                                    setSheetState(() {});
+                                  },
+                                ),
+                                if (hasDriveBooks) ...[
+                                  _pill(
+                                    label: 'Available offline (${availCounts[AvailabilityFilterState.availableOffline] ?? 0})',
+                                    selected: _availabilityFilter == AvailabilityFilterState.availableOffline,
+                                    onTap: () {
+                                      setState(() {
+                                        _availabilityFilter = AvailabilityFilterState.availableOffline;
+                                      });
+                                      locator<PreferencesService>()
+                                          .setAvailabilityFilter(AvailabilityFilterState.availableOffline);
+                                      setSheetState(() {});
+                                    },
+                                  ),
+                                  _pill(
+                                    label: 'Drive only (${availCounts[AvailabilityFilterState.driveOnly] ?? 0})',
+                                    selected: _availabilityFilter == AvailabilityFilterState.driveOnly,
+                                    onTap: () {
+                                      setState(() {
+                                        _availabilityFilter = AvailabilityFilterState.driveOnly;
+                                      });
+                                      locator<PreferencesService>()
+                                          .setAvailabilityFilter(AvailabilityFilterState.driveOnly);
+                                      setSheetState(() {});
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          TextButton.icon(
+                            icon: const Icon(Icons.filter_alt_off_rounded),
+                            label: const Text('Clear all'),
+                            onPressed: canClear
+                                ? () {
+                                    setState(() {
+                                      _statusFilter = null;
+                                      _availabilityFilter = AvailabilityFilterState.all;
+                                    });
+                                    locator<PreferencesService>()
+                                        .setAvailabilityFilter(AvailabilityFilterState.all);
+                                    setSheetState(() {});
+                                  }
+                                : null,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -1106,13 +1226,29 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Widget _noMatchesView() {
     final hasSearch = _searchQuery.isNotEmpty;
-    final hasFilter = _statusFilter != null;
+    final hasStatus = _statusFilter != null;
+    final hasAvailability = _availabilityFilter != AvailabilityFilterState.all;
+    final hasAnyFilter = hasStatus || hasAvailability;
+
     final String message;
-    if (hasSearch && hasFilter) {
+    if (hasSearch && hasStatus && hasAvailability) {
+      message =
+          'No ${_statusFilterLabel(_statusFilter!).toLowerCase()} '
+          '${_availabilityFilter.label.toLowerCase()} books match "$_searchQuery".';
+    } else if (hasSearch && hasStatus) {
       message =
           'No ${_statusFilterLabel(_statusFilter!).toLowerCase()} books match "$_searchQuery".';
-    } else if (hasFilter) {
+    } else if (hasSearch && hasAvailability) {
+      message =
+          'No ${_availabilityFilter.label.toLowerCase()} books match "$_searchQuery".';
+    } else if (hasStatus && hasAvailability) {
+      message =
+          'No ${_statusFilterLabel(_statusFilter!).toLowerCase()} '
+          '${_availabilityFilter.label.toLowerCase()} books.';
+    } else if (hasStatus) {
       message = 'No ${_statusFilterLabel(_statusFilter!).toLowerCase()} books.';
+    } else if (hasAvailability) {
+      message = 'No ${_availabilityFilter.label.toLowerCase()} books.';
     } else {
       message = 'No results for "$_searchQuery".';
     }
@@ -1126,7 +1262,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(message, textAlign: TextAlign.center),
-            if (hasSearch || hasFilter) ...[
+            if (hasSearch || hasAnyFilter) ...[
               const SizedBox(height: 20),
               TextButton.icon(
                 icon: const Icon(Icons.filter_alt_off_rounded),
@@ -1155,7 +1291,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
     setState(() {
       _searchQuery = '';
       _statusFilter = null;
+      _availabilityFilter = AvailabilityFilterState.all;
     });
+    locator<PreferencesService>().setAvailabilityFilter(AvailabilityFilterState.all);
   }
 
   String _statusFilterLabel(BookStatus s) => switch (s) {
