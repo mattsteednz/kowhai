@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'theme.dart';
 import 'package:flutter_chrome_cast/flutter_chrome_cast.dart';
 import 'screens/consent_screen.dart';
 import 'screens/library_screen.dart';
@@ -143,24 +144,13 @@ class _AudioVaultAppState extends State<AudioVaultApp> {
     _lifecycleListener?.dispose();
     super.dispose();
   }
-  static final _lightTheme = ThemeData(
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF6B4C9A),
-      brightness: Brightness.light,
-    ),
-    useMaterial3: true,
-  );
-
-  static final _darkTheme = ThemeData(
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF6B4C9A),
-      brightness: Brightness.dark,
-    ),
-    useMaterial3: true,
-  );
-
   @override
   Widget build(BuildContext context) {
+    // TextTheme must be built inside the widget tree (needs BuildContext).
+    // MaterialTheme is cheap to construct on each build — themes are cached
+    // by the MaterialApp widget itself.
+    final appTheme = MaterialTheme(createTextTheme(context));
+
     return AudioHandlerScope(
       audioHandler: widget.audioHandler,
       themeModeNotifier: widget.themeModeNotifier,
@@ -168,10 +158,10 @@ class _AudioVaultAppState extends State<AudioVaultApp> {
         valueListenable: widget.themeModeNotifier,
         builder: (context, themeMode, _) {
           return MaterialApp(
-            title: 'AudioVault',
+            title: 'Kōwhai',
             debugShowCheckedModeBanner: false,
-            theme: _lightTheme,
-            darkTheme: _darkTheme,
+            theme: appTheme.light(),
+            darkTheme: appTheme.dark(),
             themeMode: themeMode,
             home: const _AppEntryPoint(),
           );
