@@ -2,20 +2,27 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/audiobook.dart';
 
+/// Controls how the placeholder renders when no cover art is available.
+enum CoverPlaceholderStyle {
+  /// Three-line title centred on the colour block (grid cards).
+  title,
+  /// Single large initial centred on the colour block (list tile thumbnails).
+  initial,
+}
+
 /// Renders an audiobook's cover art with a placeholder fallback.
 ///
 /// Checks [Audiobook.coverImageBytes] first, then [Audiobook.coverImagePath],
-/// then falls back to a themed placeholder icon.
+/// then falls back to a themed placeholder.
 ///
 /// When [isEnriching] is true, overlays a small progress indicator on the
-/// placeholder so the user knows a cover fetch is in flight. When
-/// [enrichmentFailed] is true and no local art exists, renders a distinct
-/// "no cover available" icon instead of the default placeholder.
+/// placeholder so the user knows a cover fetch is in flight.
 class BookCover extends StatelessWidget {
   final Audiobook book;
   final double iconSize;
   final bool isEnriching;
   final bool enrichmentFailed;
+  final CoverPlaceholderStyle placeholderStyle;
 
   /// Optional render index (position in the current grid/list). When provided,
   /// the placeholder fallback picks a colour from [placeholderPalette] by
@@ -30,6 +37,7 @@ class BookCover extends StatelessWidget {
     this.iconSize = 52,
     this.isEnriching = false,
     this.enrichmentFailed = false,
+    this.placeholderStyle = CoverPlaceholderStyle.title,
     this.placeholderIndex,
   });
 
@@ -77,34 +85,49 @@ class BookCover extends StatelessWidget {
 
   Widget _placeholder() {
     final bg = _placeholderColor();
-    // Compute a legible text colour against the placeholder background.
     final textColor = bg.computeLuminance() > 0.35
         ? Colors.black.withValues(alpha: 0.75)
         : Colors.white.withValues(alpha: 0.85);
+
+    final Widget content = switch (placeholderStyle) {
+      CoverPlaceholderStyle.title => Padding(
+          padding: const EdgeInsets.all(12),
+          child: Center(
+            child: Text(
+              book.title,
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ),
+      CoverPlaceholderStyle.initial => Center(
+          child: Text(
+            book.title.isNotEmpty
+                ? book.title.trimLeft()[0].toUpperCase()
+                : '?',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              height: 1,
+            ),
+          ),
+        ),
+    };
 
     return ColoredBox(
       color: bg,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Title centred on the colour block — replaces the generic icon.
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Center(
-              child: Text(
-                book.title,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                ),
-              ),
-            ),
-          ),
+          content,
           if (isEnriching)
             Positioned(
               right: 6,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/audiobook.dart';
 import '../utils/formatters.dart';
+import 'book_cover.dart';
 import 'drive_download_overlay.dart';
 import 'enrichment_aware_cover.dart';
 
@@ -40,12 +41,14 @@ class AudiobookListTile extends StatelessWidget {
                   book: book,
                   iconSize: 28,
                   placeholderIndex: placeholderIndex,
+                  placeholderStyle: CoverPlaceholderStyle.initial,
                 ),
               )
             : EnrichmentAwareCover(
                 book: book,
                 iconSize: 28,
                 placeholderIndex: placeholderIndex,
+                placeholderStyle: CoverPlaceholderStyle.initial,
               ),
       ),
     );
