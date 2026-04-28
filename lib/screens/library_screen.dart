@@ -1450,7 +1450,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     final cancelled =
                         await showDriveDownloadProgressSheet(context, book);
                     if (cancelled == true) {
-                      _downloadingFolderIds.remove(folderId!);
+                      _downloadingFolderIds.remove(folderId);
                       _refreshDriveBook(folderId);
                     }
                   }
