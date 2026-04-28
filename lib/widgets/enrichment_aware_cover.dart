@@ -9,14 +9,12 @@ import 'book_cover.dart';
 class EnrichmentAwareCover extends StatelessWidget {
   final Audiobook book;
   final double iconSize;
-  final int? placeholderIndex;
   final CoverPlaceholderStyle placeholderStyle;
 
   const EnrichmentAwareCover({
     super.key,
     required this.book,
     required this.iconSize,
-    this.placeholderIndex,
     this.placeholderStyle = CoverPlaceholderStyle.title,
   });
 
@@ -27,7 +25,6 @@ class EnrichmentAwareCover extends StatelessWidget {
       return BookCover(
         book: book,
         iconSize: iconSize,
-        placeholderIndex: placeholderIndex,
         placeholderStyle: placeholderStyle,
       );
     }
@@ -43,7 +40,6 @@ class EnrichmentAwareCover extends StatelessWidget {
               iconSize: iconSize,
               isEnriching: enriching.contains(book.path),
               enrichmentFailed: failed.contains(book.path),
-              placeholderIndex: placeholderIndex,
               placeholderStyle: placeholderStyle,
             );
           },

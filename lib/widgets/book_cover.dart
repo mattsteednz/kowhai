@@ -24,13 +24,6 @@ class BookCover extends StatelessWidget {
   final bool enrichmentFailed;
   final CoverPlaceholderStyle placeholderStyle;
 
-  /// Optional render index (position in the current grid/list). When provided,
-  /// the placeholder fallback picks a colour from [placeholderPalette] by
-  /// `index % palette.length` so adjacent tiles never collide. When null,
-  /// falls back to a hash of the book title (used outside list contexts, e.g.
-  /// the mini player).
-  final int? placeholderIndex;
-
   const BookCover({
     super.key,
     required this.book,
@@ -38,7 +31,6 @@ class BookCover extends StatelessWidget {
     this.isEnriching = false,
     this.enrichmentFailed = false,
     this.placeholderStyle = CoverPlaceholderStyle.title,
-    this.placeholderIndex,
   });
 
   /// Muted mid-tone palette used for placeholder tiles when no cover art exists.
@@ -56,11 +48,9 @@ class BookCover extends StatelessWidget {
   ];
 
   Color _placeholderColor() {
-    final idx = placeholderIndex;
-    if (idx != null) {
-      return placeholderPalette[idx.abs() % placeholderPalette.length];
-    }
-    final hash = book.title.codeUnits.fold(0, (h, c) => h * 31 + c);
+    // Use the book path as the hash source — stable across sort order changes
+    // and consistent between the library grid/list and the player screen.
+    final hash = book.path.codeUnits.fold(0, (h, c) => h * 31 + c);
     return placeholderPalette[hash.abs() % placeholderPalette.length];
   }
 

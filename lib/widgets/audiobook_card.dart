@@ -9,7 +9,6 @@ class AudiobookCard extends StatelessWidget {
   final VoidCallback? onLongPress;
   final bool isActive;
   final BookStatus status;
-  final int? placeholderIndex;
 
   const AudiobookCard({
     super.key,
@@ -18,7 +17,6 @@ class AudiobookCard extends StatelessWidget {
     this.onLongPress,
     this.isActive = false,
     this.status = BookStatus.notStarted,
-    this.placeholderIndex,
   });
 
   @override
@@ -31,7 +29,6 @@ class AudiobookCard extends StatelessWidget {
         EnrichmentAwareCover(
           book: book,
           iconSize: 52,
-          placeholderIndex: placeholderIndex,
         ),
         if (book.isDrmLocked)
           Positioned.fill(

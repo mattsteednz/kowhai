@@ -11,7 +11,6 @@ class AudiobookListTile extends StatelessWidget {
   final VoidCallback? onDetailsPressed;
   final bool isActive;
   final BookStatus status;
-  final int? placeholderIndex;
 
   const AudiobookListTile({
     super.key,
@@ -20,7 +19,6 @@ class AudiobookListTile extends StatelessWidget {
     this.onDetailsPressed,
     this.isActive = false,
     this.status = BookStatus.notStarted,
-    this.placeholderIndex,
   });
 
   @override
@@ -40,14 +38,12 @@ class AudiobookListTile extends StatelessWidget {
                 child: EnrichmentAwareCover(
                   book: book,
                   iconSize: 28,
-                  placeholderIndex: placeholderIndex,
                   placeholderStyle: CoverPlaceholderStyle.initial,
                 ),
               )
             : EnrichmentAwareCover(
                 book: book,
                 iconSize: 28,
-                placeholderIndex: placeholderIndex,
                 placeholderStyle: CoverPlaceholderStyle.initial,
               ),
       ),
