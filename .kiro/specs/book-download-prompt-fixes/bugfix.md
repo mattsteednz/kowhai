@@ -45,3 +45,7 @@ Two related issues affect the book download/player flow in Kōwhai:
 3.5 WHEN the user taps "Download to device" on the book details screen for a not-yet-downloaded Drive book THEN the system SHALL CONTINUE TO start the download without showing the prompt.
 
 3.6 WHEN the user taps a book card in the library grid for a Drive book that has not been downloaded THEN the system SHALL CONTINUE TO show the download prompt (existing library screen behaviour is unchanged).
+
+---
+
+**Status: COMPLETE** — Both bugs fixed. WiFi file size display implemented in `lib/utils/drive_download_sheet.dart`. Book details screen download prompt implemented in `lib/screens/book_details_screen.dart` via `showDriveDownloadSheet`. Regression tests passing.
