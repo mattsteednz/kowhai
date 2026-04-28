@@ -112,15 +112,31 @@ class MiniPlayer extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                IconButton(
-                                  icon: Icon(
-                                    playing
-                                        ? Icons.pause_rounded
-                                        : Icons.play_arrow_rounded,
-                                    color: theme.colorScheme.primary,
+                                // Circular play/pause button — mirrors the
+                                // player screen's primary-coloured circle.
+                                Semantics(
+                                  button: true,
+                                  label: playing ? 'Pause' : 'Play',
+                                  child: GestureDetector(
+                                    onTap: playing ? ah.pause : ah.play,
+                                    child: Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          playing
+                                              ? Icons.pause_rounded
+                                              : Icons.play_arrow_rounded,
+                                          size: 26,
+                                          color: theme.colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  tooltip: playing ? 'Pause' : 'Play',
-                                  onPressed: playing ? ah.pause : ah.play,
                                 ),
                               ],
                             ),
