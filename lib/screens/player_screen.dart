@@ -497,7 +497,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               const SizedBox(height: 12),
               // ── Progress slider ──
               _progressSection(book, theme),
-              const SizedBox(height: 8), // breathing room where book-remaining row was
+              const SizedBox(height: 24), // breathing room where book-remaining row was
               // ── Playback controls ──
               _controlsSection(theme),
               const SizedBox(height: 24), // extra space below controls
