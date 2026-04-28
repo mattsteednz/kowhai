@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAEQ8EXJHt9of2hsVejWxYWxvbGsw25kRg',
-    appId: '1:75029388438:android:8df208b63d417c7664b6b7',
-    messagingSenderId: '75029388438',
-    projectId: 'audiovault-7c0de',
-    storageBucket: 'audiovault-7c0de.firebasestorage.app',
+    apiKey: 'AIzaSyB3B0U_AFBxmIpngH_EqBQbJFpHuaSXmvU',
+    appId: '1:991113250751:android:422c9688a1cd31ab91c30a',
+    messagingSenderId: '991113250751',
+    projectId: 'kowhai-a17bd',
+    storageBucket: 'kowhai-a17bd.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAUZa-IixLO5PeJvXlUFzaFBLVhtr4ledE',
-    appId: '1:75029388438:ios:55b3bc073121eaae64b6b7',
-    messagingSenderId: '75029388438',
-    projectId: 'audiovault-7c0de',
-    storageBucket: 'audiovault-7c0de.firebasestorage.app',
+    apiKey: 'AIzaSyD9xak9_1rpHnmofTa0RBMx60v3Y3kBU-k',
+    appId: '1:991113250751:ios:4401142cd8e1c70591c30a',
+    messagingSenderId: '991113250751',
+    projectId: 'kowhai-a17bd',
+    storageBucket: 'kowhai-a17bd.firebasestorage.app',
     iosBundleId: 'com.mattsteed.audiovault',
   );
 

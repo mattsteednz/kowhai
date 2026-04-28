@@ -1,4 +1,4 @@
-package com.mattsteed.audiovault
+package com.mattsteed.kowhai
 
 import com.ryanheise.audioservice.AudioServiceActivity
 

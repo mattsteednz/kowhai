@@ -3,28 +3,28 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>REPLACE_WITH_REAL_API_KEY</string>
+	<string>AIzaSyD9xak9_1rpHnmofTa0RBMx60v3Y3kBU-k</string>
 	<key>GCM_SENDER_ID</key>
-	<string>000000000000</string>
+	<string>991113250751</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.mattsteed.audiovault</string>
 	<key>PROJECT_ID</key>
-	<string>audiovault-7c0de</string>
+	<string>kowhai-a17bd</string>
 	<key>STORAGE_BUCKET</key>
-	<string>audiovault-7c0de.appspot.com</string>
+	<string>kowhai-a17bd.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
-	<false/>
+	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
-	<false/>
+	<false></false>
 	<key>IS_APPINVITE_ENABLED</key>
-	<true/>
+	<true></true>
 	<key>IS_GCM_ENABLED</key>
-	<true/>
+	<true></true>
 	<key>IS_SIGNIN_ENABLED</key>
-	<true/>
+	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:000000000000:ios:0000000000000000000000</string>
+	<string>1:991113250751:ios:4401142cd8e1c70591c30a</string>
 </dict>
 </plist>
