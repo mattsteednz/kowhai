@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "75029388438",
-    "project_id": "audiovault-7c0de",
-    "storage_bucket": "audiovault-7c0de.firebasestorage.app"
+    "project_number": "991113250751",
+    "project_id": "kowhai-a17bd",
+    "storage_bucket": "kowhai-a17bd.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:75029388438:android:8df208b63d417c7664b6b7",
+        "mobilesdk_app_id": "1:991113250751:android:422c9688a1cd31ab91c30a",
         "android_client_info": {
-          "package_name": "com.mattsteed.audiovault"
+          "package_name": "com.mattsteed.kowhai"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAEQ8EXJHt9of2hsVejWxYWxvbGsw25kRg"
+          "current_key": "AIzaSyB3B0U_AFBxmIpngH_EqBQbJFpHuaSXmvU"
         }
       ],
       "services": {
