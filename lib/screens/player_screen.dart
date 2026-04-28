@@ -544,14 +544,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      chapterTitle(currentIndex) != null
-                          ? 'Ch. ${currentIndex + 1}/$totalChapters · ${chapterTitle(currentIndex)}'
-                          : 'Chapter ${currentIndex + 1} of $totalChapters',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.primary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Flexible(
+                      child: Text(
+                        chapterTitle(currentIndex) != null
+                            ? 'Ch. ${currentIndex + 1}/$totalChapters · ${chapterTitle(currentIndex)}'
+                            : 'Chapter ${currentIndex + 1} of $totalChapters',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: theme.colorScheme.primary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (hasChapters) ...[
                       const SizedBox(width: 2),
@@ -684,29 +686,39 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   },
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(fmtHM(chapterElapsed),
-                        style: theme.textTheme.bodySmall),
-                    Text('-${fmtHM(chapterRemaining)}',
-                        style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              // Overall book remaining
-              if (book.duration != null && book.duration! > Duration.zero)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    '${fmtHourMin(book.duration! - displayedSec)} left',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              // Times row: chapter elapsed · chapter remaining · book remaining
+              // Book remaining is hidden on narrow screens to prevent overflow.
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final bookRemaining = (book.duration != null &&
+                          book.duration! > Duration.zero)
+                      ? '${fmtHourMin(book.duration! - displayedSec)} left'
+                      : null;
+                  // ~200dp is enough to show all three labels comfortably.
+                  final showBookRemaining =
+                      bookRemaining != null && constraints.maxWidth >= 200;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(fmtHM(chapterElapsed),
+                            style: theme.textTheme.bodySmall),
+                        if (showBookRemaining)
+                          Text(
+                            bookRemaining,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                        Text('-${fmtHM(chapterRemaining)}',
+                            style: theme.textTheme.bodySmall),
+                      ],
                     ),
-                  ),
-                ),
+                  );
+                },
+              ),
             ]);
           },
         );
