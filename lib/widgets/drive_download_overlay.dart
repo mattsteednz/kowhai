@@ -181,6 +181,8 @@ class _DriveDownloadOverlayState extends State<DriveDownloadOverlay> {
 
         // Download badge — top-right amber rounded rect with white arrow.
         // Shown when not downloaded or partially downloaded.
+        // In compact contexts (e.g. list tile thumbnails) the badge scales
+        // down to fit the top-right quadrant of the cover.
         if (_state == _OverlayState.notDownloaded ||
             _state == _OverlayState.partial)
           Positioned(
@@ -188,14 +190,14 @@ class _DriveDownloadOverlayState extends State<DriveDownloadOverlay> {
             right: 6,
             child: IgnorePointer(
               child: Container(
-                padding: const EdgeInsets.all(6),
+                padding: EdgeInsets.all(widget.iconSize <= 24 ? 3 : 6),
                 decoration: BoxDecoration(
                   color: const Color(0xfff4bd6f),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(widget.iconSize <= 24 ? 5 : 8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.download_rounded,
-                  size: 20,
+                  size: widget.iconSize <= 24 ? 12 : 20,
                   color: Colors.white,
                 ),
               ),
