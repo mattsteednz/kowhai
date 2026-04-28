@@ -4,8 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 /// Creates the app's [TextTheme] using Google Fonts.
 ///
 /// Body text uses Manrope; display/headline text uses Playfair Display.
-TextTheme createTextTheme(BuildContext context) {
-  final base = Theme.of(context).textTheme;
+/// Does not require a [BuildContext] — safe to call when constructing the
+/// root [MaterialApp] theme before any [Theme] ancestor exists.
+TextTheme createTextTheme() {
+  // Start from the M3 typography baseline, then overlay the two fonts.
+  const base = TextTheme();
   final body = GoogleFonts.manropeTextTheme(base);
   final display = GoogleFonts.playfairDisplayTextTheme(base);
   return display.copyWith(

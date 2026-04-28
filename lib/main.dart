@@ -144,13 +144,11 @@ class _AudioVaultAppState extends State<AudioVaultApp> {
     _lifecycleListener?.dispose();
     super.dispose();
   }
+  // Built once — createTextTheme() has no BuildContext dependency.
+  static final _appTheme = MaterialTheme(createTextTheme());
+
   @override
   Widget build(BuildContext context) {
-    // TextTheme must be built inside the widget tree (needs BuildContext).
-    // MaterialTheme is cheap to construct on each build — themes are cached
-    // by the MaterialApp widget itself.
-    final appTheme = MaterialTheme(createTextTheme(context));
-
     return AudioHandlerScope(
       audioHandler: widget.audioHandler,
       themeModeNotifier: widget.themeModeNotifier,
@@ -160,8 +158,8 @@ class _AudioVaultAppState extends State<AudioVaultApp> {
           return MaterialApp(
             title: 'Kōwhai',
             debugShowCheckedModeBanner: false,
-            theme: appTheme.light(),
-            darkTheme: appTheme.dark(),
+            theme: _appTheme.light(),
+            darkTheme: _appTheme.dark(),
             themeMode: themeMode,
             home: const _AppEntryPoint(),
           );
