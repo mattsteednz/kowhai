@@ -45,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _refreshOnStartup = false;
   bool _driveProgressSync = false;
   String? _driveBackupFolderName;
+  String _driveRescanStatus = '';
 
   @override
   void initState() {
@@ -56,18 +57,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = locator<PreferencesService>();
     final driveService = locator<DriveService>();
 
-    final path = await prefs.getLibraryPath();
-    final consent = await prefs.getAnalyticsConsent();
-    final themeMode = await prefs.getThemeMode();
-    final enrichment = await prefs.getMetadataEnrichment();
-    final autoRewind = await prefs.getAutoRewind();
-    final skipInterval = await prefs.getSkipInterval();
-    final driveRoot = await prefs.getDriveRootFolder();
+    final snap = await prefs.getSettingsSnapshot();
     final driveAvail = await driveService.isAvailable();
-    final removeWhenFinished = await prefs.getRemoveWhenFinished();
-    final refreshOnStartup = await prefs.getRefreshOnStartup();
-    final driveProgressSync = await prefs.getDriveProgressSync();
-    final driveBackupFolder = await prefs.getDriveBackupFolder();
 
     GoogleSignInAccount? driveAccount;
     if (driveAvail) {
@@ -76,19 +67,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (!mounted) return;
     setState(() {
-      _folderPath = path;
-      _telemetryEnabled = consent ?? false;
-      _themeMode = themeMode ?? 'system';
-      _metadataEnrichment = enrichment;
-      _autoRewind = autoRewind;
-      _skipInterval = skipInterval;
+      _folderPath = snap.libraryPath;
+      _telemetryEnabled = snap.analyticsConsent ?? false;
+      _themeMode = snap.themeMode ?? 'system';
+      _metadataEnrichment = snap.metadataEnrichment;
+      _autoRewind = snap.autoRewind;
+      _skipInterval = snap.skipInterval;
       _driveAvailable = driveAvail;
       _driveAccount = driveAccount;
-      _driveFolderName = driveRoot?.name;
-      _removeWhenFinished = removeWhenFinished;
-      _refreshOnStartup = refreshOnStartup;
-      _driveProgressSync = driveProgressSync;
-      _driveBackupFolderName = driveBackupFolder?.name;
+      _driveFolderName = snap.driveRootFolder?.name;
+      _removeWhenFinished = snap.removeWhenFinished;
+      _refreshOnStartup = snap.refreshOnStartup;
+      _driveProgressSync = snap.driveProgressSync;
+      _driveBackupFolderName = snap.driveBackupFolder?.name;
     });
   }
 
@@ -304,12 +295,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _rescanDrive() async {
-    setState(() => _driveRescanning = true);
+    setState(() {
+      _driveRescanning = true;
+      _driveRescanStatus = 'Starting rescan…';
+    });
     try {
-      await locator<DriveLibraryService>().rescanDrive();
+      await locator<DriveLibraryService>().rescanDrive(
+        onProgress: (status) {
+          if (mounted) setState(() => _driveRescanStatus = status);
+        },
+      );
       widget.onDriveRescanned?.call();
     } finally {
-      if (mounted) setState(() => _driveRescanning = false);
+      if (mounted) setState(() {
+        _driveRescanning = false;
+        _driveRescanStatus = '';
+      });
     }
   }
 
@@ -439,11 +440,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
               trailing: _driveAccount == null
-                  ? FilledButton.tonal(
+                  ? FilledButton(
                       onPressed: _connectDrive,
                       child: const Text('Connect'),
                     )
-                  : TextButton(
+                  : OutlinedButton(
                       onPressed: _disconnectDrive,
                       child: const Text('Disconnect'),
                     ),
@@ -473,7 +474,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       )
                     : const Icon(Icons.sync_rounded),
                 title: const Text('Rescan Drive'),
-                subtitle: const Text('Check for new or removed audiobooks'),
+                subtitle: Text(_driveRescanning && _driveRescanStatus.isNotEmpty
+                    ? _driveRescanStatus
+                    : 'Check for new or removed audiobooks'),
                 onTap: _driveRescanning ? null : _rescanDrive,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 4),

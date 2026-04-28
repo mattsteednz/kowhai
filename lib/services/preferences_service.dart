@@ -2,6 +2,35 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/availability_filter_state.dart';
 
+/// Read-only snapshot of all settings, loaded in a single batch.
+class SettingsSnapshot {
+  final String? libraryPath;
+  final bool? analyticsConsent;
+  final String? themeMode;
+  final bool metadataEnrichment;
+  final bool autoRewind;
+  final int skipInterval;
+  final ({String id, String name, bool isShared})? driveRootFolder;
+  final bool removeWhenFinished;
+  final bool refreshOnStartup;
+  final bool driveProgressSync;
+  final ({String id, String name})? driveBackupFolder;
+
+  const SettingsSnapshot({
+    required this.libraryPath,
+    required this.analyticsConsent,
+    required this.themeMode,
+    required this.metadataEnrichment,
+    required this.autoRewind,
+    required this.skipInterval,
+    required this.driveRootFolder,
+    required this.removeWhenFinished,
+    required this.refreshOnStartup,
+    required this.driveProgressSync,
+    required this.driveBackupFolder,
+  });
+}
+
 class PreferencesService {
   PreferencesService();
 
@@ -26,6 +55,47 @@ class PreferencesService {
 
   Future<SharedPreferences> get _sp async =>
       _prefs ??= await SharedPreferences.getInstance();
+
+  /// Loads all settings in a single batch. Use this instead of calling
+  /// individual getters when you need many values at once (e.g. Settings
+  /// screen init).
+  Future<SettingsSnapshot> getSettingsSnapshot() async {
+    final prefs = await _sp;
+
+    // Drive root folder
+    final driveRootId = prefs.getString(_driveRootFolderIdKey);
+    final driveRootName = prefs.getString(_driveRootFolderNameKey);
+    final driveRoot = (driveRootId != null && driveRootName != null)
+        ? (
+            id: driveRootId,
+            name: driveRootName,
+            isShared: prefs.getBool(_driveRootIsSharedKey) ?? false,
+          )
+        : null;
+
+    // Drive backup folder
+    final backupId = prefs.getString(_driveBackupFolderIdKey);
+    final backupName = prefs.getString(_driveBackupFolderNameKey);
+    final driveBackup = (backupId != null && backupName != null)
+        ? (id: backupId, name: backupName)
+        : null;
+
+    return SettingsSnapshot(
+      libraryPath: prefs.getString(_libraryPathKey),
+      analyticsConsent: prefs.containsKey(_analyticsConsentKey)
+          ? prefs.getBool(_analyticsConsentKey)
+          : null,
+      themeMode: prefs.getString(_themeModeKey),
+      metadataEnrichment: prefs.getBool(_metadataEnrichmentKey) ?? true,
+      autoRewind: prefs.getBool(_autoRewindKey) ?? true,
+      skipInterval: prefs.getInt(_skipIntervalKey) ?? 30,
+      driveRootFolder: driveRoot,
+      removeWhenFinished: prefs.getBool(_removeWhenFinishedKey) ?? false,
+      refreshOnStartup: prefs.getBool(_refreshOnStartupKey) ?? false,
+      driveProgressSync: prefs.getBool(_driveProgressSyncKey) ?? false,
+      driveBackupFolder: driveBackup,
+    );
+  }
 
   Future<String?> getLibraryPath() async {
     return (await _sp).getString(_libraryPathKey);

@@ -703,21 +703,25 @@ void main() {
     },
   );
 
-  // ── Property 5: Preservation — "Download to device" button unaffected ──────
+  // ── Property 5: Consistency — "Download to device" shows download sheet ─────
   //
-  // Requirement 3.5
+  // Requirement 3.5 (updated)
   //
   // Tapping the "Download to device" OutlinedButton for an undownloaded Drive
-  // book MUST continue to call `DriveLibraryService.startDownload` directly
-  // without showing the download prompt sheet.
+  // book MUST show the download prompt sheet (same as tapping the book from
+  // the library) so the user sees the size and mobile-data warning.
 
   group(
-    'Property 5: "Download to device" button unaffected (Requirement 3.5)',
+    'Property 5: "Download to device" shows download sheet (Requirement 3.5)',
     () {
       testWidgets(
-        '"Download to device" calls startDownload and shows no bottom sheet '
+        '"Download to device" shows the download sheet '
         '(Requirement 3.5)',
         (tester) async {
+          // Stub totalSizeBytes so the download sheet can display the size.
+          when(mockDriveLibraryService.totalSizeBytes('folder-123'))
+              .thenAnswer((_) async => 100000000);
+
           await tester.pumpWidget(wrapWithApp(
             BookDetailsScreen(book: undownloadedDriveBook),
           ));
@@ -735,19 +739,20 @@ void main() {
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 200));
 
-          // PRESERVED behavior: startDownload IS called.
-          verify(mockDriveLibraryService.startDownload('folder-123'))
-              .called(1);
-
-          // PRESERVED behavior: no bottom sheet is shown.
+          // UPDATED behavior: download sheet IS shown (consistent with
+          // tapping the book from the library).
           expect(
             find.byType(BottomSheet),
-            findsNothing,
+            findsOneWidget,
             reason:
-                'Expected NO download bottom sheet when tapping "Download to '
-                'device". The button should start the download directly '
-                'without showing the prompt (Requirement 3.5).',
+                'Expected the download bottom sheet when tapping "Download to '
+                'device". The button should show the prompt with size and '
+                'connectivity info (Requirement 3.5).',
           );
+
+          // startDownload should NOT have been called yet — user hasn't
+          // confirmed in the sheet.
+          verifyNever(mockDriveLibraryService.startDownload('folder-123'));
         },
       );
     },
