@@ -307,10 +307,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       widget.onDriveRescanned?.call();
     } finally {
-      if (mounted) setState(() {
-        _driveRescanning = false;
-        _driveRescanStatus = '';
-      });
+      if (mounted) {
+        setState(() {
+          _driveRescanning = false;
+          _driveRescanStatus = '';
+        });
+      }
     }
   }
 

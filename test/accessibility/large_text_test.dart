@@ -41,7 +41,6 @@ void main() {
         AudiobookCard(
           book: _book(),
           status: BookStatus.inProgress,
-          placeholderIndex: 0,
         ),
       ));
       expect(tester.takeException(), isNull);
@@ -53,7 +52,6 @@ void main() {
         AudiobookListTile(
           book: _book(),
           status: BookStatus.inProgress,
-          placeholderIndex: 0,
         ),
       ));
       expect(tester.takeException(), isNull);
@@ -66,7 +64,6 @@ void main() {
           book: _book(),
           isActive: true,
           status: BookStatus.inProgress,
-          placeholderIndex: 0,
         ),
       ));
       expect(tester.takeException(), isNull);
@@ -78,7 +75,6 @@ void main() {
         AudiobookCard(
           book: _book(),
           status: BookStatus.finished,
-          placeholderIndex: 0,
         ),
       ));
       expect(tester.takeException(), isNull);
