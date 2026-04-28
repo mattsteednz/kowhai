@@ -1303,26 +1303,38 @@ class _LibraryScreenState extends State<LibraryScreen> {
       };
 
   Widget _grid(List<Audiobook> books) {
-    return RefreshIndicator(
-      onRefresh: _scan,
-      child: GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.62,
-        ),
-        itemCount: books.length,
-        itemBuilder: (context, i) => AudiobookCard(
-          book: books[i],
-          isActive: books[i].path == _activePath && _isPlaying,
-          status: _statuses[books[i].path] ?? BookStatus.notStarted,
-          placeholderIndex: i,
-          onTap: () => _openPlayer(context, books[i]),
-          onLongPress: () => _openDetails(context, books[i]),
-        ),
-      ),
+    const crossAxisCount = 2;
+    const spacing = 12.0;
+    const padding = 12.0;
+    // Text block: 6px top padding + ~20px title + 2px gap + ~16px author + 8px bottom = 52px
+    const textBlockHeight = 52.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = (constraints.maxWidth - padding * 2 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+        final cardHeight = cardWidth + textBlockHeight;
+        return RefreshIndicator(
+          onRefresh: _scan,
+          child: GridView.builder(
+            padding: const EdgeInsets.all(padding),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
+              mainAxisExtent: cardHeight,
+            ),
+            itemCount: books.length,
+            itemBuilder: (context, i) => AudiobookCard(
+              book: books[i],
+              isActive: books[i].path == _activePath && _isPlaying,
+              status: _statuses[books[i].path] ?? BookStatus.notStarted,
+              placeholderIndex: i,
+              onTap: () => _openPlayer(context, books[i]),
+              onLongPress: () => _openDetails(context, books[i]),
+            ),
+          ),
+        );
+      },
     );
   }
 
