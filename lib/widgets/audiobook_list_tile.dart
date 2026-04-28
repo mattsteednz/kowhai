@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/audiobook.dart';
 import '../utils/formatters.dart';
+import 'book_cover.dart';
 import 'drive_download_overlay.dart';
 import 'enrichment_aware_cover.dart';
 
@@ -8,18 +9,31 @@ class AudiobookListTile extends StatelessWidget {
   final Audiobook book;
   final VoidCallback? onTap;
   final VoidCallback? onDetailsPressed;
+  /// Called when the user taps "Download" in the overflow menu.
+  /// Only shown when [downloadSizeLabel] is non-null.
+  final VoidCallback? onDownloadPressed;
+  /// Called when the user taps "Cancel download" in the overflow menu.
+  /// Only shown when [isDownloading] is true.
+  final VoidCallback? onCancelDownloadPressed;
+  /// Human-readable size label (e.g. "123.4 MB") shown in the Download menu
+  /// item. When null the Download item is omitted from the overflow menu.
+  final String? downloadSizeLabel;
+  /// Whether this book is currently being downloaded.
+  final bool isDownloading;
   final bool isActive;
   final BookStatus status;
-  final int? placeholderIndex;
 
   const AudiobookListTile({
     super.key,
     required this.book,
     this.onTap,
     this.onDetailsPressed,
+    this.onDownloadPressed,
+    this.onCancelDownloadPressed,
+    this.downloadSizeLabel,
+    this.isDownloading = false,
     this.isActive = false,
     this.status = BookStatus.notStarted,
-    this.placeholderIndex,
   });
 
   @override
@@ -39,13 +53,13 @@ class AudiobookListTile extends StatelessWidget {
                 child: EnrichmentAwareCover(
                   book: book,
                   iconSize: 28,
-                  placeholderIndex: placeholderIndex,
+                  placeholderStyle: CoverPlaceholderStyle.initial,
                 ),
               )
             : EnrichmentAwareCover(
                 book: book,
                 iconSize: 28,
-                placeholderIndex: placeholderIndex,
+                placeholderStyle: CoverPlaceholderStyle.initial,
               ),
       ),
     );
@@ -130,9 +144,31 @@ class AudiobookListTile extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
+              if (isDownloading)
+                PopupMenuItem(
+                  value: 'cancel_download',
+                  child: ListTile(
+                    leading: Icon(Icons.cancel_outlined,
+                        color: theme.colorScheme.error),
+                    title: Text('Cancel download',
+                        style: TextStyle(color: theme.colorScheme.error)),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                )
+              else if (downloadSizeLabel != null)
+                PopupMenuItem(
+                  value: 'download',
+                  child: ListTile(
+                    leading: const Icon(Icons.download_rounded),
+                    title: Text('Download ($downloadSizeLabel)'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
             ],
             onSelected: (value) {
               if (value == 'details') onDetailsPressed?.call();
+              if (value == 'download') onDownloadPressed?.call();
+              if (value == 'cancel_download') onCancelDownloadPressed?.call();
             },
           ),
         ],

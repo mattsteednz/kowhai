@@ -1,6 +1,6 @@
 # Kōwhai Audiobook Player
 
-A Flutter audiobook player for Android and iOS with background playback, position persistence, and a clean Material 3 UI.
+A Flutter audiobook player for Android and iOS with background playback, position persistence, and a Material 3 UI themed in warm amber and brown tones.
 
 ## Features
 

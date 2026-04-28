@@ -1,7 +1,7 @@
 name: kowhai
 description: Kōwhai Audiobook Player.
 publish_to: 'none'
-version: 1.6.6+0
+version: 2.0.0+0
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -32,6 +32,7 @@ dependencies:
   connectivity_plus: ^6.0.0
   xml: ^6.0.0
   collection: ^1.18.0
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -57,3 +58,8 @@ dependency_overrides:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/kowhai-icon-512.png
+    - assets/kowhai-icon-1024.png
+    - assets/kowhai-icon-120.png

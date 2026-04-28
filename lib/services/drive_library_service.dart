@@ -123,17 +123,20 @@ class DriveLibraryService {
   /// Re-scans Drive for the user's chosen root folder, diffs against stored
   /// records, and adds new books. Does not remove books whose Drive source is
   /// gone (keeps downloaded content accessible).
-  Future<List<Audiobook>> rescanDrive() async {
+  Future<List<Audiobook>> rescanDrive({void Function(String)? onProgress}) async {
     final rootFolder = await _prefs.getDriveRootFolder();
     if (rootFolder == null) return await loadDriveBooks();
 
     final account = _driveService.currentAccount;
     if (account == null) return await loadDriveBooks();
 
+    onProgress?.call('Scanning Drive folder…');
     final scans = await _driveService.scanRootFolder(
         rootFolder.id, rootFolder.isShared);
 
-    for (final scan in scans) {
+    for (int i = 0; i < scans.length; i++) {
+      final scan = scans[i];
+      onProgress?.call('Processing ${i + 1} of ${scans.length} books…');
       final existing = await _repo.getDriveBook(scan.folder.id);
       if (existing != null) continue; // already tracked
 

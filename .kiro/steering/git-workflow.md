@@ -11,7 +11,7 @@
   - Types: `feat`, `fix`, `security`, `chore`, `refactor`, `docs`, `test`
   - Example: `feat(player): add sleep timer`, `fix(library): chapter index off-by-one`
 - Merge via squash merge only; no merge commits on `main`
-- Before pushing a branch, run `flutter analyze --fatal-warnings` and `flutter test` locally — errors and warnings are not acceptable
+- **Before every `git commit`**, run both `flutter analyze --fatal-warnings` and `flutter test` locally. Both must pass with zero errors and zero warnings. Do not commit if either fails — fix the issues first. This is non-negotiable.
 - Any new code that can be unit tested must have a corresponding test before merging
 - Before merging to `main`, update `CHANGELOG.md` and `README.md` with any relevant changes
 

@@ -25,6 +25,8 @@ linter:
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 
 analyzer:
+  exclude:
+    - assets/**
   errors:
     # Generated mock files (build_runner/mockito) produce @override annotations
     # for methods that exist in the local service interface but not in the

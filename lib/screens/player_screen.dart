@@ -497,10 +497,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
               const SizedBox(height: 12),
               // ── Progress slider ──
               _progressSection(book, theme),
-              const SizedBox(height: 8),
+              const SizedBox(height: 24), // breathing room where book-remaining row was
               // ── Playback controls ──
               _controlsSection(theme),
-              const SizedBox(height: 12),
+              const SizedBox(height: 24), // extra space below controls
               // ── Speed + timer ──
               _bottomRow(theme),
               const SizedBox(height: 16),
@@ -544,14 +544,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      chapterTitle(currentIndex) != null
-                          ? 'Ch. ${currentIndex + 1}/$totalChapters · ${chapterTitle(currentIndex)}'
-                          : 'Chapter ${currentIndex + 1} of $totalChapters',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.primary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Flexible(
+                      child: Text(
+                        chapterTitle(currentIndex) != null
+                            ? 'Ch. ${currentIndex + 1}/$totalChapters · ${chapterTitle(currentIndex)}'
+                            : 'Chapter ${currentIndex + 1} of $totalChapters',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: theme.colorScheme.primary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (hasChapters) ...[
                       const SizedBox(width: 2),
@@ -601,13 +603,34 @@ class _PlayerScreenState extends State<PlayerScreen> {
       stream: _audioHandler.effectiveDurationStream,
       initialData: _audioHandler.player.duration,
       builder: (_, durSnap) {
-        final dur = durSnap.data ?? Duration.zero;
+        // For multi-file books, just_audio reports per-file duration.
+        // Use the book's total duration instead.
+        final dur = (!isM4b && book.duration != null)
+            ? book.duration!
+            : (durSnap.data ?? Duration.zero);
         return StreamBuilder<Duration>(
           stream: _audioHandler.effectivePositionStream,
           initialData: _audioHandler.player.position,
           builder: (_, posSnap) {
-            final pos = posSnap.data ?? Duration.zero;
-            final displayed = _dragging ? _dragPosition : pos;
+            final rawPos = posSnap.data ?? Duration.zero;
+
+            // For multi-file books, just_audio 0.10 reports per-file position.
+            // Convert to global position so the slider and time labels are
+            // correct across the whole book.
+            final Duration displayed;
+            if (!isM4b && book.chapterDurations.isNotEmpty) {
+              final globalMs = calculateGlobalPosition(
+                chapterIndex: _currentChapterIndex,
+                chapterPosition: _dragging ? _dragPosition : rawPos,
+                chapterDurations: book.chapterDurations,
+              );
+              displayed = _dragging
+                  ? Duration(milliseconds: globalMs)
+                  : Duration(milliseconds: globalMs);
+            } else {
+              displayed = _dragging ? _dragPosition : rawPos;
+            }
+
             final maxMs = dur.inMilliseconds.toDouble();
             final value = maxMs > 0
                 ? displayed.inMilliseconds.toDouble().clamp(0.0, maxMs)
@@ -680,33 +703,65 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       setState(() => _dragPosition = Duration(milliseconds: v.toInt())),
                   onChangeEnd: (v) {
                     setState(() => _dragging = false);
-                    _audioHandler.seek(Duration(milliseconds: v.toInt()));
+                    final globalMs = v.toInt();
+                    // For multi-file books, convert global position back to
+                    // chapter index + per-file offset.
+                    if (!isM4b && book.chapterDurations.isNotEmpty) {
+                      int remaining = globalMs;
+                      int idx = 0;
+                      for (int i = 0; i < book.chapterDurations.length; i++) {
+                        final chapMs = book.chapterDurations[i].inMilliseconds;
+                        if (remaining < chapMs) {
+                          idx = i;
+                          break;
+                        }
+                        remaining -= chapMs;
+                        idx = i + 1;
+                      }
+                      idx = idx.clamp(0, book.audioFiles.length - 1);
+                      _audioHandler.player.seek(
+                        Duration(milliseconds: remaining),
+                        index: idx,
+                      );
+                    } else {
+                      _audioHandler.seek(Duration(milliseconds: globalMs));
+                    }
                   },
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(fmtHM(chapterElapsed),
-                        style: theme.textTheme.bodySmall),
-                    Text('-${fmtHM(chapterRemaining)}',
-                        style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              // Overall book remaining
-              if (book.duration != null && book.duration! > Duration.zero)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    '${fmtHourMin(book.duration! - displayedSec)} left',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              // Times row: chapter elapsed · chapter remaining · book remaining
+              // Book remaining is hidden on narrow screens to prevent overflow.
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final bookRemaining = (book.duration != null &&
+                          book.duration! > Duration.zero)
+                      ? '${fmtHourMin(book.duration! - displayedSec)} left'
+                      : null;
+                  // ~200dp is enough to show all three labels comfortably.
+                  final showBookRemaining =
+                      bookRemaining != null && constraints.maxWidth >= 200;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(fmtHM(chapterElapsed),
+                            style: theme.textTheme.bodySmall),
+                        if (showBookRemaining)
+                          Text(
+                            bookRemaining,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                        Text('-${fmtHM(chapterRemaining)}',
+                            style: theme.textTheme.bodySmall),
+                      ],
                     ),
-                  ),
-                ),
+                  );
+                },
+              ),
             ]);
           },
         );

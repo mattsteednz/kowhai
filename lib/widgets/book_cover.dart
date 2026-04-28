@@ -2,27 +2,27 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/audiobook.dart';
 
+/// Controls how the placeholder renders when no cover art is available.
+enum CoverPlaceholderStyle {
+  /// Three-line title centred on the colour block (grid cards).
+  title,
+  /// Single large initial centred on the colour block (list tile thumbnails).
+  initial,
+}
+
 /// Renders an audiobook's cover art with a placeholder fallback.
 ///
 /// Checks [Audiobook.coverImageBytes] first, then [Audiobook.coverImagePath],
-/// then falls back to a themed placeholder icon.
+/// then falls back to a themed placeholder.
 ///
 /// When [isEnriching] is true, overlays a small progress indicator on the
-/// placeholder so the user knows a cover fetch is in flight. When
-/// [enrichmentFailed] is true and no local art exists, renders a distinct
-/// "no cover available" icon instead of the default placeholder.
+/// placeholder so the user knows a cover fetch is in flight.
 class BookCover extends StatelessWidget {
   final Audiobook book;
   final double iconSize;
   final bool isEnriching;
   final bool enrichmentFailed;
-
-  /// Optional render index (position in the current grid/list). When provided,
-  /// the placeholder fallback picks a colour from [placeholderPalette] by
-  /// `index % palette.length` so adjacent tiles never collide. When null,
-  /// falls back to a hash of the book title (used outside list contexts, e.g.
-  /// the mini player).
-  final int? placeholderIndex;
+  final CoverPlaceholderStyle placeholderStyle;
 
   const BookCover({
     super.key,
@@ -30,7 +30,7 @@ class BookCover extends StatelessWidget {
     this.iconSize = 52,
     this.isEnriching = false,
     this.enrichmentFailed = false,
-    this.placeholderIndex,
+    this.placeholderStyle = CoverPlaceholderStyle.title,
   });
 
   /// Muted mid-tone palette used for placeholder tiles when no cover art exists.
@@ -48,11 +48,9 @@ class BookCover extends StatelessWidget {
   ];
 
   Color _placeholderColor() {
-    final idx = placeholderIndex;
-    if (idx != null) {
-      return placeholderPalette[idx.abs() % placeholderPalette.length];
-    }
-    final hash = book.title.codeUnits.fold(0, (h, c) => h * 31 + c);
+    // Use the book path as the hash source — stable across sort order changes
+    // and consistent between the library grid/list and the player screen.
+    final hash = book.path.codeUnits.fold(0, (h, c) => h * 31 + c);
     return placeholderPalette[hash.abs() % placeholderPalette.length];
   }
 
@@ -76,21 +74,50 @@ class BookCover extends StatelessWidget {
   }
 
   Widget _placeholder() {
-    final showFailedIcon = enrichmentFailed && !isEnriching;
     final bg = _placeholderColor();
+    final textColor = bg.computeLuminance() > 0.35
+        ? Colors.black.withValues(alpha: 0.75)
+        : Colors.white.withValues(alpha: 0.85);
+
+    final Widget content = switch (placeholderStyle) {
+      CoverPlaceholderStyle.title => Padding(
+          padding: const EdgeInsets.all(12),
+          child: Center(
+            child: Text(
+              book.title,
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ),
+      CoverPlaceholderStyle.initial => Center(
+          child: Text(
+            book.title.isNotEmpty
+                ? book.title.trimLeft()[0].toUpperCase()
+                : '?',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              height: 1,
+            ),
+          ),
+        ),
+    };
+
     return ColoredBox(
       color: bg,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (showFailedIcon)
-            Center(
-              child: Icon(
-                Icons.image_not_supported_outlined,
-                size: iconSize,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
-            ),
+          content,
           if (isEnriching)
             Positioned(
               right: 6,

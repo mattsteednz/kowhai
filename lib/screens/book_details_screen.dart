@@ -350,13 +350,13 @@ class _ActionButtonsState extends State<_ActionButtons> {
         ] else if (notDownloaded) ...[
           const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: () {
-              locator<DriveLibraryService>()
-                  .startDownload(widget.book.driveMetadata!.folderId);
-              setState(() => _isDownloading = true);
-            },
+            onPressed: () => showDriveDownloadSheet(context, widget.book),
             icon: const Icon(Icons.download_rounded),
-            label: const Text('Download to device'),
+            label: Text(
+              _totalBookBytes > 0
+                  ? 'Download to device (${formatBytes(_totalBookBytes)})'
+                  : 'Download to device',
+            ),
           ),
         ],
         if (hasDownloaded) ...[

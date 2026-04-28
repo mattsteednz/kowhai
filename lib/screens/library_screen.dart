@@ -10,6 +10,7 @@ import '../services/drive_book_repository.dart';
 import '../services/drive_download_manager.dart';
 import '../services/drive_library_service.dart';
 import '../services/drive_service.dart';
+import '../utils/formatters.dart';
 import '../services/enrichment_service.dart';
 import '../services/position_service.dart';
 import '../services/preferences_service.dart';
@@ -281,6 +282,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
   // User-selected sort order. Defaults to last-played until prefs load.
   LibrarySortOrder _sortOrder = LibrarySortOrder.lastPlayed;
 
+  // Cached download size labels for Drive books not yet downloaded.
+  // Key: book.path, Value: formatted size string e.g. "123.4 MB".
+  final Map<String, String> _downloadSizeLabels = {};
+
+  // Drive books currently being downloaded (tracked by folderId).
+  final Set<String> _downloadingFolderIds = {};
+
   // Currently-active book tracking (for badge).
   String? _activePath;
   bool _isPlaying = false;
@@ -532,12 +540,36 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   void _onDriveDownloadEvent(DriveDownloadEvent event) {
-    if (event.state == DriveDownloadState.done) {
-      // Refresh on audio file done OR cover done (fileIndex == null) so
-      // cover art appears as soon as it finishes downloading.
+    if (event.fileIndex == null) {
+      // Cover download — still refresh on done for cover art.
+      if (event.state == DriveDownloadState.done) {
+        _refreshDriveBook(event.folderId).catchError((Object e, StackTrace st) {
+          debugPrint('[LibraryScreen] _refreshDriveBook failed: $e\n$st');
+        });
+      }
+      return;
+    }
+    // Track downloading state for the list-view menu.
+    if (event.state == DriveDownloadState.downloading) {
+      if (_downloadingFolderIds.add(event.folderId)) setState(() {});
+    } else if (event.state == DriveDownloadState.done) {
+      // Refresh on audio file done so cover art and metadata update.
       _refreshDriveBook(event.folderId).catchError((Object e, StackTrace st) {
         debugPrint('[LibraryScreen] _refreshDriveBook failed: $e\n$st');
       });
+      // Check if all files are now done — if so, remove from downloading set.
+      _checkDownloadComplete(event.folderId);
+    } else if (event.state == DriveDownloadState.error) {
+      _checkDownloadComplete(event.folderId);
+    }
+  }
+
+  Future<void> _checkDownloadComplete(String folderId) async {
+    final files = await locator<DriveBookRepository>().getFilesForBook(folderId);
+    final stillDownloading = files.any(
+        (f) => f.downloadState == DriveDownloadState.downloading);
+    if (!stillDownloading && _downloadingFolderIds.remove(folderId)) {
+      if (mounted) setState(() {});
     }
   }
 
@@ -620,7 +652,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
           return;
         }
       } else if (book.audioFiles.isEmpty) {
-        if (context.mounted) showDriveDownloadSheet(context, book);
+        // Check if a download is already in progress.
+        final anyDownloading = files.any(
+            (f) => f.downloadState == DriveDownloadState.downloading);
+        if (anyDownloading) {
+          if (context.mounted) {
+            final cancelled =
+                await showDriveDownloadProgressSheet(context, book);
+            if (cancelled == true) _refreshDriveBook(folderId);
+          }
+        } else {
+          if (context.mounted) showDriveDownloadSheet(context, book);
+        }
         return;
       }
     }
@@ -695,7 +738,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (books == null) return;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => HistoryScreen(books: books)),
+      MaterialPageRoute(
+        builder: (_) => HistoryScreen(books: [...books, ..._driveBooks]),
+      ),
     );
   }
 
@@ -756,9 +801,26 @@ class _LibraryScreenState extends State<LibraryScreen> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
-          child: Text(_error!,
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.error)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline_rounded,
+                  size: 64, color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+                onPressed: _scan,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -1303,44 +1365,98 @@ class _LibraryScreenState extends State<LibraryScreen> {
       };
 
   Widget _grid(List<Audiobook> books) {
-    return RefreshIndicator(
-      onRefresh: _scan,
-      child: GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.62,
-        ),
-        itemCount: books.length,
-        itemBuilder: (context, i) => AudiobookCard(
-          book: books[i],
-          isActive: books[i].path == _activePath && _isPlaying,
-          status: _statuses[books[i].path] ?? BookStatus.notStarted,
-          placeholderIndex: i,
-          onTap: () => _openPlayer(context, books[i]),
-          onLongPress: () => _openDetails(context, books[i]),
-        ),
-      ),
+    const crossAxisCount = 2;
+    const spacing = 12.0;
+    const padding = 12.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = (constraints.maxWidth - padding * 2 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+        return RefreshIndicator(
+          onRefresh: _scan,
+          child: GridView.builder(
+            padding: const EdgeInsets.all(padding),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
+              mainAxisExtent: cardWidth, // pure square — no text block
+            ),
+            itemCount: books.length,
+            itemBuilder: (context, i) => AudiobookCard(
+              book: books[i],
+              isActive: books[i].path == _activePath && _isPlaying,
+              status: _statuses[books[i].path] ?? BookStatus.notStarted,
+              onTap: () => _openPlayer(context, books[i]),
+              onLongPress: () => _openDetails(context, books[i]),
+            ),
+          ),
+        );
+      },
     );
   }
 
+  /// Fetches and caches the formatted download size for a Drive book that
+  /// hasn't been fully downloaded yet. No-op if already cached or not applicable.
+  Future<void> _ensureDownloadSizeLabel(Audiobook book) async {
+    if (book.source != AudiobookSource.drive) return;
+    final meta = book.driveMetadata;
+    if (meta == null) return;
+    // Only show for books that are not fully downloaded.
+    final total = meta.totalFileCount;
+    final downloaded = book.audioFiles.length;
+    if (total > 0 && downloaded >= total) return;
+    if (_downloadSizeLabels.containsKey(book.path)) return;
+
+    final sizeBytes = await locator<DriveLibraryService>().totalSizeBytes(meta.folderId);
+    if (!mounted) return;
+    if (sizeBytes > 0) {
+      setState(() => _downloadSizeLabels[book.path] = formatBytes(sizeBytes));
+    }
+  }
+
   Widget _list(List<Audiobook> books) {
+    // Kick off size fetches for any Drive books not yet cached.
+    for (final b in books) {
+      _ensureDownloadSizeLabel(b);
+    }
+
     return RefreshIndicator(
       onRefresh: _scan,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: books.length,
         separatorBuilder: (_, __) => const Divider(height: 1, indent: 88),
-        itemBuilder: (context, i) => AudiobookListTile(
-          book: books[i],
-          isActive: books[i].path == _activePath && _isPlaying,
-          status: _statuses[books[i].path] ?? BookStatus.notStarted,
-          placeholderIndex: i,
-          onTap: () => _openPlayer(context, books[i]),
-          onDetailsPressed: () => _openDetails(context, books[i]),
-        ),
+        itemBuilder: (context, i) {
+          final book = books[i];
+          final folderId = book.driveMetadata?.folderId;
+          final downloading = folderId != null &&
+              _downloadingFolderIds.contains(folderId);
+          return AudiobookListTile(
+            book: book,
+            isActive: book.path == _activePath && _isPlaying,
+            status: _statuses[book.path] ?? BookStatus.notStarted,
+            onTap: () => _openPlayer(context, book),
+            onDetailsPressed: () => _openDetails(context, book),
+            isDownloading: downloading,
+            downloadSizeLabel: downloading
+                ? null
+                : _downloadSizeLabels[book.path],
+            onDownloadPressed: !downloading && _downloadSizeLabels[book.path] != null
+                ? () => showDriveDownloadSheet(context, book)
+                : null,
+            onCancelDownloadPressed: downloading
+                ? () async {
+                    final cancelled =
+                        await showDriveDownloadProgressSheet(context, book);
+                    if (cancelled == true) {
+                      _downloadingFolderIds.remove(folderId);
+                      _refreshDriveBook(folderId);
+                    }
+                  }
+                : null,
+          );
+        },
       ),
     );
   }

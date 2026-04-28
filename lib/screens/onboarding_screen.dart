@@ -139,10 +139,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               const Spacer(),
 
               // Icon + heading
-              Icon(
-                Icons.menu_book_rounded,
-                size: 80,
-                color: theme.colorScheme.primary,
+              Image.asset(
+                'assets/kowhai-icon-512.png',
+                width: 80,
+                height: 80,
+                semanticLabel: 'Kōwhai',
               ),
               const SizedBox(height: 24),
               Text(

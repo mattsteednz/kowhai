@@ -2,6 +2,40 @@
 
 All notable changes to Kōwhai Audiobook Player are documented here.
 
+## [2.0.0] — 2026-04-28
+
+### Added
+
+- **Material 3 visual refresh** — New amber/brown colour palette with Manrope + Playfair Display fonts, updated splash screen and app icon across all platforms.
+- **Download progress sheet** — Tapping a book that's actively downloading now shows a dedicated progress sheet with a live progress bar, byte counts, and a "Cancel download" option. Previously it re-showed the start-download prompt.
+- **Cancel download from library list** — The three-dot menu on list-view tiles now shows "Cancel download" (in red) when a book is actively downloading, replacing the "Download" item.
+- **Drive rescan progress text** — The "Rescan Drive" row in Settings now shows live status text ("Scanning Drive folder…", "Processing 3 of 12 books…") instead of just a spinner.
+- **Library scan retry button** — The library error state now shows an error icon and a "Retry" button instead of just red text.
+- **Settings batch load** — All settings are now loaded in a single batch via `SettingsSnapshot`, reducing async gaps and improving Settings screen load time.
+
+### Changed
+
+- **Grid cards** — Pure square covers with no text block; title rendered on the colour placeholder for books without artwork. List-tile thumbnails show a single large initial letter.
+- **Mini player** — Frosted-glass backdrop with a filled primary-colour play/pause circle, matching the player screen.
+- **Player screen** — Streamlined vertical spacing; chapter bar handles overflow gracefully; book-remaining time shown inline below the scrubber.
+- **Placeholder colours** — Stable path-based hashing ensures each book gets a consistent colour across grid, list, and player views regardless of sort order.
+- **Button style consistency** — Standardised across all screens: `FilledButton` for primary actions, `OutlinedButton` for secondary, `TextButton` for tertiary/cancel. Settings Drive "Connect" upgraded from tonal to filled; "Disconnect" from text to outlined.
+- **Download confirmation consistency** — The "Download to device" button in book details now shows the same download sheet (with size and mobile data warning) as tapping from the library, instead of starting the download immediately.
+
+### Fixed
+
+- **Multi-file book progress stuck at 0:00** — The player screen progress section was treating `just_audio`'s per-file position as a global position for multi-file books. After jumping to chapter 10, elapsed time showed 0:00 and remaining showed the full book duration. Position is now correctly converted to global coordinates, and slider seeking maps back to the correct file + offset.
+- **History screen empty for Drive books** — The history screen only received local books (`_rawBooks`), so Drive books with saved positions never appeared. It now receives the combined local + Drive book list.
+
+### Internal
+
+- `PreferencesService.getSettingsSnapshot()` loads all preferences in one `SharedPreferences` read.
+- `DriveLibraryService.rescanDrive()` accepts an optional `onProgress` callback.
+- `AudiobookListTile` gains `isDownloading` and `onCancelDownloadPressed` props.
+- `_LibraryScreenState` tracks downloading folder IDs for list-view menu state.
+
+---
+
 ## [1.6.6] — 2026-04-26
 
 ### Fixed

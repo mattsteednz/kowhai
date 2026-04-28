@@ -9,7 +9,6 @@ class AudiobookCard extends StatelessWidget {
   final VoidCallback? onLongPress;
   final bool isActive;
   final BookStatus status;
-  final int? placeholderIndex;
 
   const AudiobookCard({
     super.key,
@@ -18,7 +17,6 @@ class AudiobookCard extends StatelessWidget {
     this.onLongPress,
     this.isActive = false,
     this.status = BookStatus.notStarted,
-    this.placeholderIndex,
   });
 
   @override
@@ -31,7 +29,6 @@ class AudiobookCard extends StatelessWidget {
         EnrichmentAwareCover(
           book: book,
           iconSize: 52,
-          placeholderIndex: placeholderIndex,
         ),
         if (book.isDrmLocked)
           Positioned.fill(
@@ -104,38 +101,10 @@ class AudiobookCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: coverStack),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    book.title,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (book.author != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      book.author!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.65),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+        // Square cover only — title lives on the cover placeholder.
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: coverStack,
         ),
       ),
     );
