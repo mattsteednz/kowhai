@@ -142,28 +142,6 @@ class _DriveDownloadOverlayState extends State<DriveDownloadOverlay> {
       children: [
         widget.child,
 
-        // Download icon for not-downloaded books — dark circular backdrop
-        // ensures visibility on both light and dark covers.
-        if (_state == _OverlayState.notDownloaded)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.download_for_offline,
-                    size: widget.iconSize,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
         // Progress overlay while downloading
         if (_state == _OverlayState.downloading)
           Positioned.fill(
@@ -201,36 +179,29 @@ class _DriveDownloadOverlayState extends State<DriveDownloadOverlay> {
             ),
           ),
 
-        // Cloud badge — top-left
-        Positioned(
-          top: 4,
-          left: 4,
-          child: _CloudBadge(state: _state),
-        ),
+        // Download badge — top-right amber rounded rect with white arrow.
+        // Shown when not downloaded or partially downloaded.
+        if (_state == _OverlayState.notDownloaded ||
+            _state == _OverlayState.partial)
+          Positioned(
+            top: 6,
+            right: 6,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xfff4bd6f),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.download_rounded,
+                  size: 20,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
       ],
-    );
-  }
-}
-
-class _CloudBadge extends StatelessWidget {
-  final _OverlayState state;
-
-  const _CloudBadge({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = state == _OverlayState.done
-        ? theme.colorScheme.primary
-        : Colors.white54;
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(Icons.cloud, size: 12, color: color),
     );
   }
 }

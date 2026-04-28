@@ -76,21 +76,35 @@ class BookCover extends StatelessWidget {
   }
 
   Widget _placeholder() {
-    final showFailedIcon = enrichmentFailed && !isEnriching;
     final bg = _placeholderColor();
+    // Compute a legible text colour against the placeholder background.
+    final textColor = bg.computeLuminance() > 0.35
+        ? Colors.black.withValues(alpha: 0.75)
+        : Colors.white.withValues(alpha: 0.85);
+
     return ColoredBox(
       color: bg,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (showFailedIcon)
-            Center(
-              child: Icon(
-                Icons.image_not_supported_outlined,
-                size: iconSize,
-                color: Colors.white.withValues(alpha: 0.55),
+          // Title centred on the colour block — replaces the generic icon.
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Center(
+              child: Text(
+                book.title,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
               ),
             ),
+          ),
           if (isEnriching)
             Positioned(
               right: 6,

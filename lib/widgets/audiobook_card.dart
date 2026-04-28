@@ -107,7 +107,11 @@ class AudiobookCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: coverStack),
+            // Square cover
+            AspectRatio(
+              aspectRatio: 1,
+              child: coverStack,
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
               child: Column(
@@ -117,21 +121,19 @@ class AudiobookCard extends StatelessWidget {
                     book.title,
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(fontWeight: FontWeight.w600),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (book.author != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      book.author!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.65),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 2),
+                  Text(
+                    book.author ?? '—',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface
+                          .withValues(alpha: 0.65),
                     ),
-                  ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
